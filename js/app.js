@@ -47,6 +47,30 @@
   // Settings
   document.getElementById('btnSettings').onclick = () => openModal('settingsModal');
 
+  // Theme toggle
+  const updateThemeButtons = () => {
+    const isLight = document.documentElement.classList.contains('light');
+    document.getElementById('btnThemeDark').classList.toggle('active', !isLight);
+    document.getElementById('btnThemeLight').classList.toggle('active', isLight);
+  };
+  document.getElementById('btnThemeDark').onclick = () => {
+    document.documentElement.classList.remove('light');
+    localStorage.setItem('travellog_theme', 'dark');
+    updateThemeButtons();
+    TravelMap.draw(); // Redraw map for theme
+  };
+  document.getElementById('btnThemeLight').onclick = () => {
+    document.documentElement.classList.add('light');
+    localStorage.setItem('travellog_theme', 'light');
+    updateThemeButtons();
+    TravelMap.draw();
+  };
+  // Init theme from storage
+  if (localStorage.getItem('travellog_theme') === 'light') {
+    document.documentElement.classList.add('light');
+  }
+  updateThemeButtons();
+
   // Export
   document.getElementById('btnExport').onclick = () => {
     const data = Store.exportData();

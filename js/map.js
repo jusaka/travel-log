@@ -182,9 +182,11 @@ const TravelMap = {
           for (const ring of poly) this._drawRing(ctx, ring);
       }
     }
-    ctx.fillStyle = 'rgba(20, 30, 50, 0.85)';
+    // Theme-aware colors
+    const isLight = document.documentElement.classList.contains('light');
+    ctx.fillStyle = isLight ? 'rgba(229, 231, 235, 0.5)' : 'rgba(20, 30, 50, 0.85)';
     ctx.fill();
-    ctx.strokeStyle = 'rgba(59, 130, 246, 0.25)';
+    ctx.strokeStyle = isLight ? 'rgba(59, 130, 246, 0.35)' : 'rgba(59, 130, 246, 0.25)';
     ctx.lineWidth = 0.8;
     ctx.stroke();
   },
@@ -192,12 +194,18 @@ const TravelMap = {
   _draw() {
     const ctx = this.ctx;
     const W = this.W, H = this.H;
+    const isLight = document.documentElement.classList.contains('light');
     ctx.clearRect(0, 0, W, H);
 
     // Background gradient
     const bgGrad = ctx.createRadialGradient(W / 2, H / 2, 0, W / 2, H / 2, Math.max(W, H));
-    bgGrad.addColorStop(0, '#0d1b2e');
-    bgGrad.addColorStop(1, '#070d18');
+    if (isLight) {
+      bgGrad.addColorStop(0, '#f9fafb');
+      bgGrad.addColorStop(1, '#e5e7eb');
+    } else {
+      bgGrad.addColorStop(0, '#0d1b2e');
+      bgGrad.addColorStop(1, '#070d18');
+    }
     ctx.fillStyle = bgGrad;
     ctx.fillRect(0, 0, W, H);
 
@@ -207,7 +215,7 @@ const TravelMap = {
     // Empty state
     const trips = Store.getAll();
     if (trips.length === 0) {
-      ctx.fillStyle = 'rgba(107, 114, 128, 0.8)';
+      ctx.fillStyle = isLight ? 'rgba(75, 85, 99, 0.6)' : 'rgba(107, 114, 128, 0.8)';
       ctx.font = '14px -apple-system, sans-serif';
       ctx.textAlign = 'center';
       ctx.fillText('添加行程后，您的旅行足迹将在这里展现', W / 2, H / 2 + 20);
