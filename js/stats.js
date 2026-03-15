@@ -43,6 +43,11 @@ const Stats = {
       <div class="stat-row"><span class="stat-label">总旅途时间</span><span class="stat-value">${fmtDuration(stats.totalMins)}</span></div>
     </div>`;
 
+    // Pie chart: flight vs train
+    if (stats.flightCount > 0 && stats.trainCount > 0) {
+      html += this._renderPieChart(stats);
+    }
+
     // History chart
     html += this._renderHistoryChart();
 
@@ -120,6 +125,91 @@ const Stats = {
     }
 
     grid.innerHTML = html;
+  },
+
+  _renderPieChart(stats) {
+    const canvasId = 'pieCanvas';
+    setTimeout(() => {
+      const canvas = document.getElementById(canvasId);
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      const dpr = window.devicePixelRatio || 1;
+      const W = canvas.offsetWidth;
+      const H = canvas.offsetHeight;
+      canvas.width = W * dpr;
+      canvas.height = H * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      const cx = W / 2, cy = H / 2, r = Math.min(W, H) / 2 - 12;
+      const total = stats.flightCount + stats.trainCount;
+      const flightAngle = (stats.flightCount / total) * Math.PI * 2;
+
+      // Flight slice
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.arc(cx, cy, r, -Math.PI / 2, -Math.PI / 2 + flightAngle);
+      ctx.closePath();
+      const fg = ctx.createRadialGradient(cx, cy - r / 2, r * 0.1, cx, cy, r);
+      fg.addColorStop(0, '#fbbf24');
+      fg.addColorStop(1, '#d97706');
+      ctx.fillStyle = fg;
+      ctx.fill();
+
+      // Train slice
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.arc(cx, cy, r, -Math.PI / 2 + flightAngle, -Math.PI / 2 + Math.PI * 2);
+      ctx.closePath();
+      const tg = ctx.createRadialGradient(cx, cy + r / 2, r * 0.1, cx, cy, r);
+      tg.addColorStop(0, '#34d399');
+      tg.addColorStop(1, '#059669');
+      ctx.fillStyle = tg;
+      ctx.fill();
+
+      // Inner circle (donut hole)
+      ctx.beginPath();
+      ctx.arc(cx, cy, r * 0.55, 0, Math.PI * 2);
+      ctx.fillStyle = '#111827';
+      ctx.fill();
+
+      // Center text
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#f3f4f6';
+      ctx.font = `bold ${Math.round(r * 0.28)}px -apple-system, sans-serif`;
+      ctx.fillText(total + '次', cx, cy + 4);
+      ctx.font = `${Math.round(r * 0.15)}px -apple-system, sans-serif`;
+      ctx.fillStyle = '#9ca3af';
+      ctx.fillText('总行程', cx, cy + r * 0.22);
+    }, 50);
+
+    const flightPct = Math.round(stats.flightCount / (stats.flightCount + stats.trainCount) * 100);
+    const trainPct = 100 - flightPct;
+    return `<div class="stat-card">
+      <h4>🥧 出行方式占比</h4>
+      <div style="display:flex;align-items:center;gap:16px">
+        <canvas id="${canvasId}" style="width:120px;height:120px;flex-shrink:0"></canvas>
+        <div style="flex:1">
+          <div style="margin-bottom:10px">
+            <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+              <span style="color:var(--flight);font-size:13px">✈️ 飞行</span>
+              <span style="font-weight:700">${flightPct}%</span>
+            </div>
+            <div style="height:6px;background:var(--bg3);border-radius:3px;overflow:hidden">
+              <div style="width:${flightPct}%;height:100%;background:var(--flight);border-radius:3px"></div>
+            </div>
+          </div>
+          <div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+              <span style="color:var(--train);font-size:13px">🚄 高铁</span>
+              <span style="font-weight:700">${trainPct}%</span>
+            </div>
+            <div style="height:6px;background:var(--bg3);border-radius:3px;overflow:hidden">
+              <div style="width:${trainPct}%;height:100%;background:var(--train);border-radius:3px"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>`;
   },
 
   _renderHistoryChart() {

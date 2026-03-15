@@ -65,6 +65,14 @@ const TravelMap = {
   bindEvents() {
     const c = this.canvas;
     c.addEventListener('mousedown', e => this.onPointerDown(e.clientX, e.clientY - c.getBoundingClientRect().top));
+    c.addEventListener('mousemove', e => {
+      if (this.isDragging) {
+        this.onPointerMove(e.clientX, e.clientY - c.getBoundingClientRect().top);
+      } else {
+        this._checkHover(e.offsetX, e.offsetY);
+      }
+    });
+    c.addEventListener('mouseleave', () => { document.getElementById('mapTooltip').style.display = 'none'; });
     window.addEventListener('mousemove', e => { if (this.isDragging) this.onPointerMove(e.clientX, e.clientY - c.getBoundingClientRect().top); });
     window.addEventListener('mouseup', () => this.isDragging = false);
     c.addEventListener('wheel', e => { e.preventDefault(); this.zoom(e.deltaY > 0 ? 0.85 : 1.15, e.offsetX, e.offsetY); }, { passive: false });
@@ -354,6 +362,49 @@ const TravelMap = {
         ctx.fillText(ep.city, x, y - r - 5);
       }
     });
+  },
+
+  _checkHover(mx, my) {
+    const trips = Store.getAll();
+    if (!trips.length) return;
+
+    const endpoints = new Map();
+    trips.forEach(t => {
+      const addPoint = (lat, lng, city, type) => {
+        if (!lat || !lng) return;
+        const key = `${lat.toFixed(3)},${lng.toFixed(3)}`;
+        if (!endpoints.has(key)) endpoints.set(key, { lat, lng, city, types: new Set(), flightCount: 0, trainCount: 0 });
+        const ep = endpoints.get(key);
+        ep.types.add(type);
+        if (type === 'flight') ep.flightCount++;
+        else ep.trainCount++;
+      };
+      addPoint(t.fromLat, t.fromLng, t.fromCity, t.type);
+      addPoint(t.toLat, t.toLng, t.toCity, t.type);
+    });
+
+    const tooltip = document.getElementById('mapTooltip');
+    let found = false;
+    endpoints.forEach(ep => {
+      if (found) return;
+      const [x, y] = this.project(ep.lat, ep.lng);
+      const r = Math.min(3 + (ep.flightCount + ep.trainCount) * 1.2, 9) * 2.5; // hover radius
+      if (Math.hypot(mx - x, my - y) < r + 6) {
+        found = true;
+        tooltip.style.display = 'block';
+        // Position tooltip
+        const px = Math.min(mx + 12, this.W - 140);
+        const py = Math.max(my - 80, 8);
+        tooltip.style.left = px + 'px';
+        tooltip.style.top = py + 'px';
+        const totalTrips = ep.flightCount + ep.trainCount;
+        tooltip.innerHTML = `<div class="tt-city">${escHtml(ep.city || '未知')}</div>
+          ${ep.flightCount > 0 ? `<div class="tt-row"><span>✈️ 飞行</span><span>${ep.flightCount} 次</span></div>` : ''}
+          ${ep.trainCount > 0 ? `<div class="tt-row"><span>🚄 高铁</span><span>${ep.trainCount} 次</span></div>` : ''}
+          <div class="tt-row"><span>合计</span><span>${totalTrips} 次</span></div>`;
+      }
+    });
+    if (!found) tooltip.style.display = 'none';
   },
 
   updateSummary() {
