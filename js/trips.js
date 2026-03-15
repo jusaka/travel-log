@@ -257,23 +257,122 @@ const Trips = {
       trip.seat = document.getElementById('tSeat').value;
       trip.seatType = document.getElementById('tSeatType').value;
       trip.note = document.getElementById('tNote').value;
-      trip.distance = calcDistance(trip.fromLat, trip.fromLng, trip.toLat, trip.toLng);
+      // 高铁实际运行距离约为直线距离的1.3倍
+      trip.distance = Math.round(calcDistance(trip.fromLat, trip.fromLng, trip.toLat, trip.toLng) * 1.3);
       trip.duration = calcTripDuration(trip.depTime, trip.arrTime);
     }
 
     if (this.editingId) {
       Store.update(this.editingId, trip);
       showToast('行程已更新');
+      closeModal('addTripModal');
     } else {
       Store.add(trip);
-      showToast('行程已添加');
+      closeModal('addTripModal');
+      // Offer return trip
+      this._offerReturnTrip(trip);
     }
 
-    closeModal('addTripModal');
     this.render();
     TravelMap.draw();
     TravelMap.updateSummary();
     Stats.render();
+  },
+
+  _offerReturnTrip(trip) {
+    // Show a toast with "add return trip" option
+    const el = document.getElementById('toast');
+    el.innerHTML = `✅ 行程已添加 <button id="btnReturnTrip" style="margin-left:12px;background:var(--accent);color:#fff;border:none;padding:4px 12px;border-radius:12px;font-size:12px;font-weight:600;cursor:pointer">+ 添加返程</button>`;
+    el.classList.add('show');
+    clearTimeout(el._timer);
+    el._timer = setTimeout(() => { el.classList.remove('show'); el.textContent = ''; }, 8000);
+    
+    document.getElementById('btnReturnTrip').onclick = () => {
+      el.classList.remove('show');
+      // Create return trip data
+      const returnTrip = { ...trip };
+      delete returnTrip.id;
+      delete returnTrip.createdAt;
+      // Swap from/to
+      if (trip.type === 'flight') {
+        returnTrip.fromCode = trip.toCode;
+        returnTrip.toCode = trip.fromCode;
+        returnTrip.fromCity = trip.toCity;
+        returnTrip.toCity = trip.fromCity;
+        returnTrip.fromLat = trip.toLat;
+        returnTrip.fromLng = trip.toLng;
+        returnTrip.toLat = trip.fromLat;
+        returnTrip.toLng = trip.fromLng;
+        returnTrip.flightNo = ''; // Different flight number usually
+      } else {
+        returnTrip.fromStation = trip.toStation;
+        returnTrip.toStation = trip.fromStation;
+        returnTrip.fromCity = trip.toCity;
+        returnTrip.toCity = trip.fromCity;
+        returnTrip.fromLat = trip.toLat;
+        returnTrip.fromLng = trip.toLng;
+        returnTrip.toLat = trip.fromLat;
+        returnTrip.toLng = trip.fromLng;
+        returnTrip.trainNo = '';
+      }
+      returnTrip.depTime = '';
+      returnTrip.arrTime = '';
+      returnTrip.seat = '';
+      returnTrip.note = '';
+      
+      // Open add form pre-filled with return trip
+      this.editingId = null;
+      document.getElementById('modalTitle').textContent = '添加返程';
+      document.getElementById('btnDeleteTrip').style.display = 'none';
+      document.getElementById('btnDuplicateTrip').style.display = 'none';
+      this.clearForm();
+      this._prefillForm(returnTrip);
+      openModal('addTripModal');
+    };
+  },
+
+  _prefillForm(trip) {
+    this.currentType = trip.type;
+    document.querySelectorAll('.type-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.type === trip.type);
+    });
+    document.getElementById('flightForm').style.display = trip.type === 'flight' ? '' : 'none';
+    document.getElementById('trainForm').style.display = trip.type === 'train' ? '' : 'none';
+
+    if (trip.type === 'flight') {
+      document.getElementById('fDate').value = trip.date || '';
+      document.getElementById('fFlightNo').value = trip.flightNo || '';
+      const fFrom = document.getElementById('fFrom');
+      fFrom.value = trip.fromCode ? `${trip.fromCode} ${trip.fromCity}${AIRPORTS[trip.fromCode]?.name || ''}` : '';
+      fFrom.dataset.lat = trip.fromLat || '';
+      fFrom.dataset.lng = trip.fromLng || '';
+      fFrom.dataset.city = trip.fromCity || '';
+      fFrom.dataset.code = trip.fromCode || '';
+      const fTo = document.getElementById('fTo');
+      fTo.value = trip.toCode ? `${trip.toCode} ${trip.toCity}${AIRPORTS[trip.toCode]?.name || ''}` : '';
+      fTo.dataset.lat = trip.toLat || '';
+      fTo.dataset.lng = trip.toLng || '';
+      fTo.dataset.city = trip.toCity || '';
+      fTo.dataset.code = trip.toCode || '';
+      document.getElementById('fAirline').value = trip.airline || '';
+      document.getElementById('fClass').value = trip.seatClass || 'economy';
+    } else {
+      document.getElementById('tDate').value = trip.date || '';
+      document.getElementById('tTrainNo').value = trip.trainNo || '';
+      const tFrom = document.getElementById('tFrom');
+      tFrom.value = trip.fromStation || '';
+      tFrom.dataset.lat = trip.fromLat || '';
+      tFrom.dataset.lng = trip.fromLng || '';
+      tFrom.dataset.city = trip.fromCity || '';
+      tFrom.dataset.code = trip.fromStation || '';
+      const tTo = document.getElementById('tTo');
+      tTo.value = trip.toStation || '';
+      tTo.dataset.lat = trip.toLat || '';
+      tTo.dataset.lng = trip.toLng || '';
+      tTo.dataset.city = trip.toCity || '';
+      tTo.dataset.code = trip.toStation || '';
+      document.getElementById('tSeatType').value = trip.seatType || 'second';
+    }
   },
 
   deleteTrip() {
@@ -504,7 +603,84 @@ const Trips = {
         clearTimeout(longPressTimer);
       });
       
-      card.onclick = () => this.openEdit(card.dataset.id);
+      card.onclick = () => this.showDetail(card.dataset.id);
     });
+  },
+
+  showDetail(id) {
+    const t = Store.getById(id);
+    if (!t) return;
+    
+    const isF = t.type === 'flight';
+    const body = document.getElementById('tripDetailBody');
+    
+    // Header section - boarding pass style
+    const fromName = isF ? (t.fromCode || t.fromCity) : (t.fromStation || t.fromCity);
+    const toName = isF ? (t.toCode || t.toCity) : (t.toStation || t.toCity);
+    const typeIcon = isF ? '✈️' : '🚄';
+    const typeColor = isF ? 'var(--flight)' : 'var(--train)';
+    const no = isF ? (t.flightNo || '') : (t.trainNo || '');
+    const airlineName = isF && t.airline ? (AIRLINES[t.airline]?.name || t.airline) : '';
+    
+    let html = `
+      <div style="text-align:center;padding:20px 0;border-bottom:1px dashed var(--bg3);margin-bottom:16px;position:relative">
+        <div style="font-size:11px;color:var(--text3);margin-bottom:16px">${fmtDate(t.date)}</div>
+        <div style="display:flex;align-items:center;justify-content:center;gap:20px">
+          <div style="text-align:center;flex:1">
+            <div style="font-size:28px;font-weight:800;color:var(--text)">${escHtml(fromName)}</div>
+            <div style="font-size:12px;color:var(--text3);margin-top:4px">${escHtml(t.fromCity || '')}</div>
+            ${t.depTime ? `<div style="font-size:14px;color:var(--text2);margin-top:8px;font-weight:600">${t.depTime}</div>` : ''}
+          </div>
+          <div style="text-align:center;flex-shrink:0">
+            <div style="font-size:24px">${typeIcon}</div>
+            <div style="width:80px;height:1px;background:linear-gradient(90deg,transparent,${typeColor},transparent);margin:8px 0"></div>
+            ${t.duration ? `<div style="font-size:11px;color:var(--text3)">${fmtDuration(t.duration)}</div>` : ''}
+          </div>
+          <div style="text-align:center;flex:1">
+            <div style="font-size:28px;font-weight:800;color:var(--text)">${escHtml(toName)}</div>
+            <div style="font-size:12px;color:var(--text3);margin-top:4px">${escHtml(t.toCity || '')}</div>
+            ${t.arrTime ? `<div style="font-size:14px;color:var(--text2);margin-top:8px;font-weight:600">${t.arrTime}</div>` : ''}
+          </div>
+        </div>
+        ${t.distance ? `<div style="margin-top:16px;font-size:16px;font-weight:700;color:${typeColor}">${fmtDist(t.distance)}</div>` : ''}
+      </div>
+    `;
+    
+    // Detail rows
+    const rows = [];
+    if (no) rows.push(['航班/车次', `<span style="font-weight:700">${escHtml(no)}</span>`]);
+    if (airlineName) rows.push(['航空公司', escHtml(airlineName)]);
+    if (t.aircraft) rows.push(['机型', escHtml(t.aircraft)]);
+    if (t.seat) rows.push(['座位', escHtml(t.seat)]);
+    if (isF && t.seatClass) {
+      const classMap = {economy:'经济舱',business:'商务舱',first:'头等舱',premium:'超级经济舱'};
+      rows.push(['舱位', classMap[t.seatClass] || t.seatClass]);
+    }
+    if (!isF && t.seatType) {
+      const typeMap = {second:'二等座',first:'一等座',business:'商务座',standing:'站票'};
+      rows.push(['席别', typeMap[t.seatType] || t.seatType]);
+    }
+    if (t.note) rows.push(['备注', escHtml(t.note)]);
+    
+    if (rows.length > 0) {
+      html += `<div style="margin-bottom:16px">
+        ${rows.map(([label, val]) => `
+          <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--bg3)">
+            <span style="color:var(--text3);font-size:13px">${label}</span>
+            <span style="font-size:14px">${val}</span>
+          </div>
+        `).join('')}
+      </div>`;
+    }
+    
+    body.innerHTML = html;
+    
+    // Edit button
+    document.getElementById('btnEditFromDetail').onclick = () => {
+      closeModal('tripDetailModal');
+      setTimeout(() => this.openEdit(id), 200);
+    };
+    
+    openModal('tripDetailModal');
   },
 };

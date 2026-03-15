@@ -303,6 +303,22 @@
   </div>
 </div>
 
+<!-- Trip Detail Modal -->
+<div id="tripDetailModal" class="modal" style="display:none">
+  <div class="modal-content modal-large">
+    <div class="modal-header">
+      <h3 id="detailTitle">行程详情</h3>
+      <button class="modal-close" onclick="closeModal('tripDetailModal')">×</button>
+    </div>
+    <div class="modal-body" id="tripDetailBody"></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('tripDetailModal')">关闭</button>
+      <div class="flex-spacer"></div>
+      <button class="btn btn-primary" id="btnEditFromDetail">✏️ 编辑</button>
+    </div>
+  </div>
+</div>
+
 <!-- Confirm Modal -->
 <div id="confirmModal" class="modal" style="display:none">
   <div class="modal-content modal-small">
