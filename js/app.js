@@ -86,6 +86,38 @@
     e.target.value = '';
   };
 
+  // Export CSV
+  document.getElementById('btnExportCSV').onclick = () => {
+    const trips = Store.getAll();
+    if (!trips.length) {
+      showToast('没有数据可导出');
+      return;
+    }
+    // CSV header
+    const headers = ['date','type','fromCity','toCity','fromCode','toCode','fromStation','toStation','flightNo','trainNo','airline','depTime','arrTime','distance','duration','seatClass','seatType','seat','aircraft','note'];
+    const csvRows = [headers.join(',')];
+    trips.forEach(t => {
+      const row = headers.map(h => {
+        const val = t[h] ?? '';
+        // Escape commas and quotes
+        if (typeof val === 'string' && (val.includes(',') || val.includes('"') || val.includes('\n'))) {
+          return '"' + val.replace(/"/g, '""') + '"';
+        }
+        return val;
+      });
+      csvRows.push(row.join(','));
+    });
+    const csv = csvRows.join('\n');
+    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `travellog-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('CSV已导出');
+  };
+
   // Clear all data
   document.getElementById('btnClearAll').onclick = () => {
     showConfirm('确定要清空所有行程数据？此操作不可恢复！', () => {

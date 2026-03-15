@@ -167,8 +167,17 @@ const Store = {
     }, null, 2);
   },
 
-  // Import
-  importData(json) {
+  // Import - supports both JSON and CSV
+  importData(data) {
+    // Check if it's CSV (starts with known header or date)
+    const trimmed = data.trim();
+    if (trimmed.startsWith('date,') || /^\d{4}-\d{2}-\d{2}/.test(trimmed.split('\n')[0])) {
+      return this._importCSV(trimmed);
+    }
+    return this._importJSON(data);
+  },
+
+  _importJSON(json) {
     try {
       const data = typeof json === 'string' ? JSON.parse(json) : json;
       if (data.app !== 'travellog' || !Array.isArray(data.trips)) {
@@ -187,7 +196,139 @@ const Store = {
       this.save();
       return added;
     } catch(e) {
-      throw new Error('数据格式错误');
+      throw new Error('JSON格式错误');
     }
+  },
+
+  _importCSV(csv) {
+    const lines = csv.split('\n').filter(l => l.trim());
+    if (lines.length < 2) throw new Error('CSV为空或格式错误');
+    
+    // Parse header
+    const headerLine = lines[0];
+    const headers = this._parseCSVLine(headerLine);
+    const hasHeader = headers.includes('date') || headers.includes('type');
+    const dataLines = hasHeader ? lines.slice(1) : lines;
+    
+    // Known fields
+    const fieldMap = {
+      'date': 'date', '日期': 'date',
+      'type': 'type', '类型': 'type',
+      'fromCity': 'fromCity', '出发城市': 'fromCity',
+      'toCity': 'toCity', '到达城市': 'toCity', 
+      'fromCode': 'fromCode', '出发机场': 'fromCode',
+      'toCode': 'toCode', '到达机场': 'toCode',
+      'fromStation': 'fromStation', '出发车站': 'fromStation',
+      'toStation': 'toStation', '到达车站': 'toStation',
+      'flightNo': 'flightNo', '航班号': 'flightNo',
+      'trainNo': 'trainNo', '车次': 'trainNo',
+      'airline': 'airline', '航司': 'airline',
+      'depTime': 'depTime', '出发时间': 'depTime',
+      'arrTime': 'arrTime', '到达时间': 'arrTime',
+      'distance': 'distance', '里程': 'distance',
+      'duration': 'duration', '时长': 'duration',
+      'seatClass': 'seatClass', '舱位': 'seatClass',
+      'seatType': 'seatType', '席别': 'seatType',
+      'seat': 'seat', '座位': 'seat',
+      'note': 'note', '备注': 'note',
+    };
+
+    let added = 0;
+    dataLines.forEach(line => {
+      const values = this._parseCSVLine(line);
+      const trip = { type: 'flight' }; // default
+
+      if (hasHeader) {
+        headers.forEach((h, i) => {
+          const key = fieldMap[h] || h;
+          if (values[i] !== undefined && values[i] !== '') {
+            trip[key] = values[i];
+          }
+        });
+      } else {
+        // Assume: date, fromCity, toCity, flightNo/trainNo
+        trip.date = values[0];
+        trip.fromCity = values[1];
+        trip.toCity = values[2];
+        trip.flightNo = values[3] || '';
+      }
+
+      // Parse numeric fields
+      if (trip.distance) trip.distance = parseInt(trip.distance) || 0;
+      if (trip.duration) trip.duration = parseInt(trip.duration) || 0;
+
+      // Try to auto-detect type
+      if (!trip.type || trip.type === '') {
+        if (trip.trainNo || trip.fromStation) trip.type = 'train';
+        else trip.type = 'flight';
+      }
+
+      // Generate id
+      trip.id = Date.now().toString(36) + Math.random().toString(36).slice(2,6) + added;
+      trip.createdAt = Date.now();
+
+      // Try to lookup coordinates
+      if (trip.type === 'flight' && trip.fromCode && AIRPORTS[trip.fromCode]) {
+        const ap = AIRPORTS[trip.fromCode];
+        trip.fromLat = ap.lat;
+        trip.fromLng = ap.lng;
+        trip.fromCity = trip.fromCity || ap.city;
+      }
+      if (trip.type === 'flight' && trip.toCode && AIRPORTS[trip.toCode]) {
+        const ap = AIRPORTS[trip.toCode];
+        trip.toLat = ap.lat;
+        trip.toLng = ap.lng;
+        trip.toCity = trip.toCity || ap.city;
+      }
+      if (trip.type === 'train' && trip.fromStation && STATIONS[trip.fromStation]) {
+        const st = STATIONS[trip.fromStation];
+        trip.fromLat = st.lat;
+        trip.fromLng = st.lng;
+        trip.fromCity = trip.fromCity || st.city;
+      }
+      if (trip.type === 'train' && trip.toStation && STATIONS[trip.toStation]) {
+        const st = STATIONS[trip.toStation];
+        trip.toLat = st.lat;
+        trip.toLng = st.lng;
+        trip.toCity = trip.toCity || st.city;
+      }
+
+      // Calculate distance if missing
+      if (!trip.distance && trip.fromLat && trip.toLat) {
+        trip.distance = calcDistance(trip.fromLat, trip.fromLng, trip.toLat, trip.toLng);
+        if (trip.type === 'train') trip.distance = Math.round(trip.distance * 1.3);
+      }
+
+      this._trips.push(trip);
+      added++;
+    });
+
+    this._trips.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+    this.save();
+    return added;
+  },
+
+  _parseCSVLine(line) {
+    const result = [];
+    let current = '';
+    let inQuotes = false;
+    for (let i = 0; i < line.length; i++) {
+      const c = line[i];
+      if (c === '"') {
+        if (inQuotes && line[i+1] === '"') {
+          current += '"';
+          i++;
+        } else {
+          inQuotes = !inQuotes;
+        }
+      } else if (c === ',' && !inQuotes) {
+        result.push(current.trim());
+        current = '';
+      } else {
+        current += c;
+      }
+    }
+    result.push(current.trim());
+    return result;
   },
 };
