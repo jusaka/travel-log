@@ -311,6 +311,73 @@ const Trips = {
     Annual.render();
   },
 
+  showQuickActions(id, x, y) {
+    // Create a context menu
+    let menu = document.getElementById('quickActionsMenu');
+    if (!menu) {
+      menu = document.createElement('div');
+      menu.id = 'quickActionsMenu';
+      menu.style.cssText = 'position:fixed;background:var(--bg2);border:1px solid var(--bg3);border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,0.3);padding:8px;z-index:300;min-width:140px';
+      document.body.appendChild(menu);
+    }
+    
+    menu.innerHTML = `
+      <button class="quick-action-btn" data-action="edit">✏️ 编辑</button>
+      <button class="quick-action-btn" data-action="duplicate">📋 复制</button>
+      <button class="quick-action-btn" data-action="delete" style="color:var(--danger)">🗑️ 删除</button>
+    `;
+    
+    // Position menu
+    menu.style.left = Math.min(x, window.innerWidth - 160) + 'px';
+    menu.style.top = (y - 80) + 'px';
+    menu.style.display = 'block';
+    
+    // Handle clicks
+    menu.querySelectorAll('.quick-action-btn').forEach(btn => {
+      btn.onclick = () => {
+        menu.style.display = 'none';
+        const action = btn.dataset.action;
+        if (action === 'edit') {
+          this.openEdit(id);
+        } else if (action === 'duplicate') {
+          const original = Store.getById(id);
+          if (original) {
+            const copy = { ...original };
+            delete copy.id;
+            delete copy.createdAt;
+            copy.date = new Date().toISOString().split('T')[0];
+            Store.add(copy);
+            showToast('已复制行程');
+            this.render();
+            TravelMap.draw();
+            TravelMap.updateSummary();
+            Stats.render();
+            Annual.render();
+          }
+        } else if (action === 'delete') {
+          showConfirm('确定删除这条行程？', () => {
+            Store.delete(id);
+            closeModal('confirmModal');
+            showToast('已删除');
+            this.render();
+            TravelMap.draw();
+            TravelMap.updateSummary();
+            Stats.render();
+          });
+        }
+      };
+    });
+    
+    // Close on backdrop click
+    const closeMenu = (e) => {
+      if (!menu.contains(e.target)) {
+        menu.style.display = 'none';
+        document.removeEventListener('click', closeMenu);
+      }
+    };
+    setTimeout(() => document.addEventListener('click', closeMenu), 100);
+  },
+
   render() {
     const type = document.getElementById('filterType').value;
     const yearVal = document.getElementById('filterYear').value;
@@ -385,6 +452,35 @@ const Trips = {
 
     // Click to edit
     list.querySelectorAll('.trip-card').forEach(card => {
+      let longPressTimer = null;
+      let startX = 0, startY = 0;
+      
+      card.addEventListener('touchstart', (e) => {
+        startX = e.touches[0].clientX;
+        startY = e.touches[0].clientY;
+        longPressTimer = setTimeout(() => {
+          // Vibrate if supported
+          if (navigator.vibrate) navigator.vibrate(50);
+          this.showQuickActions(card.dataset.id, e.touches[0].clientX, e.touches[0].clientY);
+        }, 500);
+      }, { passive: true });
+      
+      card.addEventListener('touchmove', (e) => {
+        const dx = Math.abs(e.touches[0].clientX - startX);
+        const dy = Math.abs(e.touches[0].clientY - startY);
+        if (dx > 10 || dy > 10) {
+          clearTimeout(longPressTimer);
+        }
+      }, { passive: true });
+      
+      card.addEventListener('touchend', () => {
+        clearTimeout(longPressTimer);
+      });
+      
+      card.addEventListener('touchcancel', () => {
+        clearTimeout(longPressTimer);
+      });
+      
       card.onclick = () => this.openEdit(card.dataset.id);
     });
   },
