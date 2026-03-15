@@ -400,6 +400,15 @@ const Trips = {
         return searchFields.includes(searchQuery);
       });
     }
+    
+    // Helper: highlight search query in text
+    const highlight = (str) => {
+      if (!str || !searchQuery) return escHtml(str || '');
+      const escaped = escHtml(str);
+      const escapedQ = escHtml(searchQuery);
+      return escaped.replace(new RegExp(escapedQ, 'gi'), m => `<mark style="background:rgba(245,158,11,0.35);color:var(--flight);border-radius:2px;padding:0 2px">${m}</mark>`);
+    };
+    
     // Sort
     if (sort === 'oldest') trips = [...trips].reverse();
 
@@ -444,8 +453,8 @@ const Trips = {
         </div>
         <div class="trip-route" style="margin:10px 0">
           <div style="text-align:center">
-            <div class="trip-city">${escHtml(t.fromCity || t.fromStation || '?')}</div>
-            <div style="font-size:11px;color:var(--text3);margin-top:2px">${escHtml(fromLabel)}</div>
+            <div class="trip-city">${highlight(t.fromCity || t.fromStation || '?')}</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:2px">${highlight(fromLabel)}</div>
           </div>
           <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px">
             <div style="font-size:10px;color:var(--text3)">${dur || ''}</div>
@@ -453,12 +462,12 @@ const Trips = {
             <div style="font-size:10px;color:${isF ? 'var(--flight)' : 'var(--train)'}">→</div>
           </div>
           <div style="text-align:center">
-            <div class="trip-city">${escHtml(t.toCity || t.toStation || '?')}</div>
-            <div style="font-size:11px;color:var(--text3);margin-top:2px">${escHtml(toLabel)}</div>
+            <div class="trip-city">${highlight(t.toCity || t.toStation || '?')}</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:2px">${highlight(toLabel)}</div>
           </div>
         </div>
         <div style="display:flex;justify-content:space-between;align-items:center;padding-top:8px;border-top:1px solid var(--bg3)">
-          <div style="font-size:12px;color:var(--text3)">${escHtml([no, airline].filter(Boolean).join(' · '))}</div>
+          <div style="font-size:12px;color:var(--text3)">${highlight([no, airline].filter(Boolean).join(' · '))}</div>
           ${dist ? `<span class="trip-km">${dist}</span>` : ''}
         </div>
       </div>`;
