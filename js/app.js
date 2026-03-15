@@ -86,6 +86,21 @@
     e.target.value = '';
   };
 
+  // Clear all data
+  document.getElementById('btnClearAll').onclick = () => {
+    showConfirm('确定要清空所有行程数据？此操作不可恢复！', () => {
+      localStorage.removeItem('travellog_trips');
+      closeModal('confirmModal');
+      closeModal('settingsModal');
+      showToast('已清空所有数据');
+      Trips.render();
+      TravelMap.draw();
+      TravelMap.updateSummary();
+      Stats.render();
+      Annual.render();
+    });
+  };
+
   // Close modals on backdrop click
   document.querySelectorAll('.modal').forEach(modal => {
     modal.addEventListener('click', e => {
