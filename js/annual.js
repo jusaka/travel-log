@@ -215,7 +215,208 @@ const Annual = {
       </div>
     </div>`;
 
+    // Fun footer + share
+    html += `<div style="text-align:center;padding:16px 0 80px">
+      <button class="btn btn-primary" onclick="Annual.generateShareImage()" style="width:100%;padding:14px;font-size:15px;font-weight:600">📤 生成分享图片</button>
+    </div>`;
+
     content.innerHTML = html;
+  },
+
+  async generateShareImage() {
+    const trips = Store.getByYear(this.year);
+    if (!trips.length) return;
+
+    const flights = trips.filter(t => t.type === 'flight');
+    const trains = trips.filter(t => t.type === 'train');
+    let totalKm = 0, totalMins = 0;
+    const cities = new Set();
+    trips.forEach(t => {
+      totalKm += t.distance || 0;
+      totalMins += t.duration || 0;
+      if (t.fromCity) cities.add(t.fromCity);
+      if (t.toCity) cities.add(t.toCity);
+    });
+
+    const dpr = 2;
+    const W = 375, H = 667; // iPhone SE size
+    const canvas = document.createElement('canvas');
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
+    const ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+
+    // Background gradient
+    const bg = ctx.createLinearGradient(0, 0, 0, H);
+    bg.addColorStop(0, '#0d1b2e');
+    bg.addColorStop(0.5, '#1a1a3e');
+    bg.addColorStop(1, '#0a0f1a');
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, W, H);
+
+    // Decorative elements
+    ctx.globalAlpha = 0.06;
+    for (let i = 0; i < 6; i++) {
+      ctx.beginPath();
+      ctx.arc(W * Math.random(), H * Math.random(), 80 + Math.random() * 120, 0, Math.PI * 2);
+      ctx.fillStyle = i % 2 === 0 ? '#3b82f6' : '#f59e0b';
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+
+    // Header
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 28px -apple-system, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('✈️ 旅途纵横', W / 2, 50);
+
+    ctx.font = '13px -apple-system, sans-serif';
+    ctx.fillStyle = '#9ca3af';
+    ctx.fillText(`${this.year}年度旅行报告`, W / 2, 72);
+
+    // Divider
+    const divGrad = ctx.createLinearGradient(40, 0, W - 40, 0);
+    divGrad.addColorStop(0, 'transparent');
+    divGrad.addColorStop(0.5, 'rgba(59,130,246,0.5)');
+    divGrad.addColorStop(1, 'transparent');
+    ctx.strokeStyle = divGrad;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(40, 88);
+    ctx.lineTo(W - 40, 88);
+    ctx.stroke();
+
+    // Big number
+    ctx.fillStyle = '#60a5fa';
+    ctx.font = 'bold 72px -apple-system, sans-serif';
+    ctx.fillText(trips.length.toString(), W / 2, 158);
+
+    ctx.fillStyle = '#9ca3af';
+    ctx.font = '14px -apple-system, sans-serif';
+    ctx.fillText('次出行', W / 2, 178);
+
+    // Stats grid (2x3)
+    const statsData = [
+      { label: '飞行', value: flights.length + '次', color: '#f59e0b' },
+      { label: '高铁', value: trains.length + '次', color: '#10b981' },
+      { label: '总里程', value: fmtDist(totalKm), color: '#60a5fa' },
+      { label: '在路上', value: fmtDuration(totalMins), color: '#60a5fa' },
+      { label: '城市', value: cities.size + '个', color: '#a78bfa' },
+      { label: '绕地球', value: (totalKm / 40075).toFixed(1) + '圈', color: '#f472b6' },
+    ];
+
+    const gridY = 205;
+    const cellW = (W - 60) / 3;
+    const cellH = 65;
+    statsData.forEach((s, i) => {
+      const col = i % 3;
+      const row = Math.floor(i / 3);
+      const x = 30 + col * cellW + cellW / 2;
+      const y = gridY + row * cellH;
+
+      // Box background
+      ctx.fillStyle = 'rgba(255,255,255,0.04)';
+      const bx = 30 + col * cellW + 4;
+      const by = y - 18;
+      ctx.beginPath();
+      ctx.roundRect(bx, by, cellW - 8, cellH - 8, 8);
+      ctx.fill();
+
+      ctx.fillStyle = s.color;
+      ctx.font = 'bold 22px -apple-system, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(s.value, x, y + 8);
+
+      ctx.fillStyle = '#6b7280';
+      ctx.font = '11px -apple-system, sans-serif';
+      ctx.fillText(s.label, x, y + 26);
+    });
+
+    // Top cities
+    const cityCount = {};
+    trips.forEach(t => {
+      if (t.fromCity) cityCount[t.fromCity] = (cityCount[t.fromCity] || 0) + 1;
+      if (t.toCity) cityCount[t.toCity] = (cityCount[t.toCity] || 0) + 1;
+    });
+    const topCities = Object.entries(cityCount).sort((a, b) => b[1] - a[1]).slice(0, 5);
+
+    const cityY = gridY + cellH * 2 + 25;
+    ctx.fillStyle = '#e5e7eb';
+    ctx.font = 'bold 15px -apple-system, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText('🏙️ 常去城市 Top 5', 30, cityY);
+
+    const maxCityCount = topCities.length > 0 ? topCities[0][1] : 1;
+    topCities.forEach((c, i) => {
+      const y = cityY + 20 + i * 28;
+      const barW = (c[1] / maxCityCount) * (W - 140);
+
+      // Bar
+      const barGrad = ctx.createLinearGradient(75, 0, 75 + barW, 0);
+      barGrad.addColorStop(0, 'rgba(59,130,246,0.6)');
+      barGrad.addColorStop(1, 'rgba(59,130,246,0.15)');
+      ctx.fillStyle = barGrad;
+      ctx.beginPath();
+      ctx.roundRect(75, y - 8, barW, 18, 4);
+      ctx.fill();
+
+      // City name
+      ctx.fillStyle = '#d1d5db';
+      ctx.font = '12px -apple-system, sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText(c[0], 30, y + 5);
+
+      // Count
+      ctx.fillStyle = '#9ca3af';
+      ctx.font = '11px -apple-system, sans-serif';
+      ctx.textAlign = 'right';
+      ctx.fillText(c[1] + '次', W - 30, y + 5);
+    });
+
+    // Divider 2
+    const div2Y = cityY + 20 + topCities.length * 28 + 15;
+    ctx.strokeStyle = divGrad;
+    ctx.beginPath();
+    ctx.moveTo(40, div2Y);
+    ctx.lineTo(W - 40, div2Y);
+    ctx.stroke();
+
+    // Fun facts
+    const funY = div2Y + 25;
+    ctx.fillStyle = '#e5e7eb';
+    ctx.font = 'bold 15px -apple-system, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText('🎯 趣味数据', 30, funY);
+
+    const funFacts = [
+      `📐 平均每程 ${fmtDist(Math.round(totalKm / Math.max(trips.length, 1)))}`,
+      `📅 约每 ${Math.round(365 / Math.max(trips.length, 1))} 天出行一次`,
+      `⏱️ 旅途总时长 ${Math.round(totalMins / 60)} 小时`,
+    ];
+    funFacts.forEach((f, i) => {
+      ctx.fillStyle = '#9ca3af';
+      ctx.font = '12px -apple-system, sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText(f, 30, funY + 22 + i * 22);
+    });
+
+    // Footer
+    ctx.fillStyle = '#4b5563';
+    ctx.font = '10px -apple-system, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('旅途纵横 · 记录每一次出发', W / 2, H - 30);
+    ctx.fillText(`生成于 ${new Date().toISOString().split('T')[0]}`, W / 2, H - 16);
+
+    // Convert to blob and download
+    canvas.toBlob(blob => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `旅途纵横-${this.year}年报.png`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast('分享图片已生成 📸');
+    }, 'image/png');
   },
 
   _renderHeatmap(dateCounts) {
