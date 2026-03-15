@@ -61,6 +61,23 @@ const Stats = {
       <div class="stat-row"><span class="stat-label">马拉松等效</span><span class="stat-value">${Math.round(stats.totalKm / 42.195)} 场</span></div>
     </div>`;
 
+    // Travel records
+    const records = [];
+    if (stats.maxStreak >= 1) records.push(['🔥 最长连续出行', `${stats.maxStreak} 天`]);
+    if (stats.longestTrip) records.push(['📏 最远单程', `${escHtml(stats.longestTrip.fromCity || '?')} → ${escHtml(stats.longestTrip.toCity || '?')} (${fmtDist(stats.longestTrip.distance)})`]);
+    if (stats.shortestTrip && stats.totalTrips > 1) records.push(['📍 最近单程', `${escHtml(stats.shortestTrip.fromCity || '?')} → ${escHtml(stats.shortestTrip.toCity || '?')} (${fmtDist(stats.shortestTrip.distance)})`]);
+    if (stats.busiestMonth) {
+      const [ym, count] = stats.busiestMonth;
+      const [y, m] = ym.split('-');
+      records.push(['📅 最忙月份', `${y}年${parseInt(m)}月 (${count}次)`]);
+    }
+    if (records.length > 0) {
+      html += `<div class="stat-card">
+        <h4>🏆 旅行纪录</h4>
+        ${records.map(([label, val]) => `<div class="stat-row"><span class="stat-label">${label}</span><span class="stat-value" style="font-size:13px;max-width:60%;text-align:right">${val}</span></div>`).join('')}
+      </div>`;
+    }
+
     // Top cities
     if (stats.topCities.length > 0) {
       const maxCount = stats.topCities[0][1];

@@ -422,15 +422,32 @@ const TravelMap = {
         tooltip.innerHTML = `<div class="tt-city">${escHtml(ep.city || '未知')}</div>
           ${ep.flightCount > 0 ? `<div class="tt-row"><span>✈️ 飞行</span><span>${ep.flightCount} 次</span></div>` : ''}
           ${ep.trainCount > 0 ? `<div class="tt-row"><span>🚄 高铁</span><span>${ep.trainCount} 次</span></div>` : ''}
-          <div class="tt-row"><span>合计</span><span>${totalTrips} 次</span></div>`;
+          <div class="tt-row"><span>合计</span><span>${totalTrips} 次</span></div>
+          <div style="margin-top:8px;text-align:center;font-size:11px;color:var(--accent);cursor:pointer" class="tt-view-trips" data-city="${escHtml(ep.city || '')}">查看该城市行程 →</div>`;
+        
+        // Add click handler for "view trips" link
+        const viewBtn = tooltip.querySelector('.tt-view-trips');
+        if (viewBtn) {
+          viewBtn.onclick = () => {
+            const city = viewBtn.dataset.city;
+            tooltip.style.display = 'none';
+            // Switch to trips tab and search for city
+            document.querySelector('[data-tab=trips]').click();
+            const searchInput = document.getElementById('tripSearch');
+            searchInput.value = city;
+            searchInput.dispatchEvent(new Event('input'));
+          };
+        }
       }
     });
     if (!found) {
       tooltip.style.display = 'none';
+      tooltip.style.pointerEvents = 'none';
     } else if (isTap) {
-      // Auto-hide after 3s on mobile tap
+      tooltip.style.pointerEvents = 'auto';
+      // Auto-hide after 5s on mobile tap
       clearTimeout(this._tooltipTimer);
-      this._tooltipTimer = setTimeout(() => { tooltip.style.display = 'none'; }, 3000);
+      this._tooltipTimer = setTimeout(() => { tooltip.style.display = 'none'; tooltip.style.pointerEvents = 'none'; }, 5000);
     }
   },
 

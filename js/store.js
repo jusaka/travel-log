@@ -107,6 +107,34 @@ const Store = {
     for (const c in fromCities) cityCounts[c] = (cityCounts[c]||0) + fromCities[c];
     for (const c in toCities) cityCounts[c] = (cityCounts[c]||0) + toCities[c];
 
+    // Calculate streaks and records
+    const sortedDates = [...new Set(trips.map(t => t.date))].sort();
+    let maxStreak = 0, currentStreak = 1;
+    for (let i = 1; i < sortedDates.length; i++) {
+      const prev = new Date(sortedDates[i-1]);
+      const curr = new Date(sortedDates[i]);
+      const dayDiff = (curr - prev) / (1000 * 60 * 60 * 24);
+      if (dayDiff <= 1) {
+        currentStreak++;
+      } else {
+        maxStreak = Math.max(maxStreak, currentStreak);
+        currentStreak = 1;
+      }
+    }
+    maxStreak = Math.max(maxStreak, currentStreak);
+
+    // Longest single trip
+    const longestTrip = trips.reduce((max, t) => (t.distance || 0) > (max?.distance || 0) ? t : max, trips[0]);
+    // Shortest single trip
+    const shortestTrip = trips.filter(t => t.distance > 0).reduce((min, t) => t.distance < (min?.distance || Infinity) ? t : min, null);
+    // Most active month
+    const monthCounts = {};
+    trips.forEach(t => {
+      const m = t.date?.substring(0, 7);
+      if (m) monthCounts[m] = (monthCounts[m] || 0) + 1;
+    });
+    const busiestMonth = Object.entries(monthCounts).sort((a,b) => b[1] - a[1])[0];
+
     return {
       totalTrips: trips.length,
       flightCount: flights.length,
@@ -122,6 +150,10 @@ const Store = {
       airlines,
       topCities: Object.entries(cityCounts).sort((a,b)=>b[1]-a[1]).slice(0,10),
       topAirlines: Object.entries(airlines).sort((a,b)=>b[1]-a[1]).slice(0,5),
+      maxStreak,
+      longestTrip,
+      shortestTrip,
+      busiestMonth,
     };
   },
 
