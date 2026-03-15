@@ -142,6 +142,68 @@
     showToast('CSV已导出');
   };
 
+  // Add sample data
+  document.getElementById('btnAddSample').onclick = () => {
+    const sampleTrips = [
+      { type: 'flight', date: '2026-01-15', fromCode: 'PEK', toCode: 'SHA', flightNo: 'CA1515', airline: 'CA', depTime: '08:00', arrTime: '10:15', seatClass: 'economy' },
+      { type: 'flight', date: '2026-02-20', fromCode: 'SHA', toCode: 'CTU', flightNo: 'MU5401', airline: 'MU', depTime: '14:30', arrTime: '17:45', seatClass: 'economy' },
+      { type: 'train', date: '2026-03-05', fromStation: '上海虹桥', toStation: '杭州东', trainNo: 'G7501', depTime: '09:00', arrTime: '10:05', seatType: '二等座' },
+      { type: 'flight', date: '2026-03-12', fromCode: 'CTU', toCode: 'CAN', flightNo: '3U8881', airline: '3U', depTime: '11:20', arrTime: '13:40', seatClass: 'economy' },
+      { type: 'flight', date: '2026-04-01', fromCode: 'CAN', toCode: 'SIN', flightNo: 'CZ351', airline: 'CZ', depTime: '15:00', arrTime: '19:05', seatClass: 'business' },
+      { type: 'flight', date: '2026-04-05', fromCode: 'SIN', toCode: 'BKK', flightNo: 'SQ972', airline: 'SQ', depTime: '10:30', arrTime: '12:00', seatClass: 'economy' },
+      { type: 'flight', date: '2026-04-08', fromCode: 'BKK', toCode: 'HKG', flightNo: 'CX750', airline: 'CX', depTime: '16:45', arrTime: '20:30', seatClass: 'economy' },
+      { type: 'train', date: '2026-05-01', fromStation: '广州南', toStation: '深圳北', trainNo: 'G6001', depTime: '08:00', arrTime: '08:35', seatType: '一等座' },
+      { type: 'flight', date: '2026-06-15', fromCode: 'SZX', toCode: 'NRT', flightNo: 'NH932', airline: 'NH', depTime: '09:30', arrTime: '14:45', seatClass: 'economy' },
+      { type: 'flight', date: '2026-06-20', fromCode: 'KIX', toCode: 'PVG', flightNo: 'MU748', airline: 'MU', depTime: '15:00', arrTime: '16:30', seatClass: 'economy' },
+    ];
+
+    let added = 0;
+    sampleTrips.forEach(t => {
+      const trip = { ...t, id: genId(), createdAt: Date.now() };
+      // Lookup coordinates
+      if (t.type === 'flight' && t.fromCode && AIRPORTS[t.fromCode]) {
+        const ap = AIRPORTS[t.fromCode];
+        trip.fromLat = ap.lat;
+        trip.fromLng = ap.lng;
+        trip.fromCity = ap.city;
+      }
+      if (t.type === 'flight' && t.toCode && AIRPORTS[t.toCode]) {
+        const ap = AIRPORTS[t.toCode];
+        trip.toLat = ap.lat;
+        trip.toLng = ap.lng;
+        trip.toCity = ap.city;
+      }
+      if (t.type === 'train' && t.fromStation && STATIONS[t.fromStation]) {
+        const st = STATIONS[t.fromStation];
+        trip.fromLat = st.lat;
+        trip.fromLng = st.lng;
+        trip.fromCity = st.city;
+      }
+      if (t.type === 'train' && t.toStation && STATIONS[t.toStation]) {
+        const st = STATIONS[t.toStation];
+        trip.toLat = st.lat;
+        trip.toLng = st.lng;
+        trip.toCity = st.city;
+      }
+      // Calculate distance
+      if (trip.fromLat && trip.toLat) {
+        trip.distance = calcDistance(trip.fromLat, trip.fromLng, trip.toLat, trip.toLng);
+        if (trip.type === 'train') trip.distance = Math.round(trip.distance * 1.3);
+      }
+      trip.duration = calcTripDuration(trip.depTime, trip.arrTime);
+      Store.add(trip);
+      added++;
+    });
+
+    closeModal('settingsModal');
+    showToast(`已添加 ${added} 条示例行程 🎉`);
+    Trips.render();
+    TravelMap.draw();
+    TravelMap.updateSummary();
+    Stats.render();
+    Annual.render();
+  };
+
   // Clear all data
   document.getElementById('btnClearAll').onclick = () => {
     showConfirm('确定要清空所有行程数据？此操作不可恢复！', () => {
