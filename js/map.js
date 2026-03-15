@@ -1,16 +1,17 @@
-// ===== Map Renderer =====
+// ===== Map Renderer v2 =====
 
 const TravelMap = {
   canvas: null,
   ctx: null,
   scale: 1,
-  offsetX: 0,
-  offsetY: 0,
+  centerLng: 105,
+  centerLat: 35,
   baseScale: 1,
   isDragging: false,
   lastX: 0, lastY: 0,
   pinchDist: 0,
   animFrame: null,
+  geoData: null,
 
   init(canvas) {
     this.canvas = canvas;
@@ -18,11 +19,17 @@ const TravelMap = {
     this.resize();
     this.bindEvents();
     window.addEventListener('resize', () => this.resize());
+    // Load geo data
+    fetch('/data/world.json')
+      .then(r => r.json())
+      .then(d => { this.geoData = d; this.draw(); })
+      .catch(() => { /* no geo data */ });
   },
 
   resize() {
     const dpr = window.devicePixelRatio || 1;
     const rect = this.canvas.parentElement.getBoundingClientRect();
+    if (rect.width < 10 || rect.height < 10) return;
     this.canvas.width = rect.width * dpr;
     this.canvas.height = rect.height * dpr;
     this.canvas.style.width = rect.width + 'px';
@@ -34,60 +41,62 @@ const TravelMap = {
   },
 
   resetView() {
-    // China bounds: approximately 73°E-135°E, 18°N-54°N
-    // Center: ~105°E, 35°N
-    // Map needs to fit 62° longitude and 36° latitude
-    const chinaLngSpan = 62;  // degrees
-    const chinaLatSpan = 36;  // degrees
-    const chinaCenterLng = 105;
-    const chinaCenterLat = 35;
-    
-    this.baseScale = Math.min(this.W / chinaLngSpan, this.H / chinaLatSpan) * 0.9; // 90% to have some margin
+    const chinaLngSpan = 62;
+    const chinaLatSpan = 36;
+    this.baseScale = Math.min(this.W / chinaLngSpan, this.H / chinaLatSpan) * 0.9;
     this.scale = this.baseScale;
-    this.centerLng = chinaCenterLng;
-    this.centerLat = chinaCenterLat;
+    this.centerLng = 105;
+    this.centerLat = 35;
     this.draw();
   },
 
-  // Equirectangular projection centered on China
   project(lat, lng) {
     const x = this.W / 2 + (lng - this.centerLng) * this.scale;
     const y = this.H / 2 - (lat - this.centerLat) * this.scale;
     return [x, y];
   },
 
+  unproject(x, y) {
+    const lng = (x - this.W / 2) / this.scale + this.centerLng;
+    const lat = -(y - this.H / 2) / this.scale + this.centerLat;
+    return [lat, lng];
+  },
+
   bindEvents() {
     const c = this.canvas;
-    // Mouse
-    c.addEventListener('mousedown', e => this.onPointerDown(e.clientX, e.clientY));
-    c.addEventListener('mousemove', e => { if(this.isDragging) this.onPointerMove(e.clientX, e.clientY) });
-    c.addEventListener('mouseup', () => this.isDragging = false);
-    c.addEventListener('wheel', e => { e.preventDefault(); this.zoom(e.deltaY > 0 ? 0.9 : 1.1, e.clientX, e.clientY) }, {passive:false});
-    // Touch
+    c.addEventListener('mousedown', e => this.onPointerDown(e.clientX, e.clientY - c.getBoundingClientRect().top));
+    window.addEventListener('mousemove', e => { if (this.isDragging) this.onPointerMove(e.clientX, e.clientY - c.getBoundingClientRect().top); });
+    window.addEventListener('mouseup', () => this.isDragging = false);
+    c.addEventListener('wheel', e => { e.preventDefault(); this.zoom(e.deltaY > 0 ? 0.85 : 1.15, e.offsetX, e.offsetY); }, { passive: false });
+
     c.addEventListener('touchstart', e => {
       if (e.touches.length === 1) {
-        this.onPointerDown(e.touches[0].clientX, e.touches[0].clientY);
+        const r = c.getBoundingClientRect();
+        this.onPointerDown(e.touches[0].clientX - r.left, e.touches[0].clientY - r.top);
       } else if (e.touches.length === 2) {
         this.pinchDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+        this.isDragging = false;
       }
-    }, {passive:true});
+    }, { passive: true });
+
     c.addEventListener('touchmove', e => {
       e.preventDefault();
+      const r = c.getBoundingClientRect();
       if (e.touches.length === 1 && this.isDragging) {
-        this.onPointerMove(e.touches[0].clientX, e.touches[0].clientY);
+        this.onPointerMove(e.touches[0].clientX - r.left, e.touches[0].clientY - r.top);
       } else if (e.touches.length === 2) {
         const d = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
-        const cx = (e.touches[0].clientX + e.touches[1].clientX) / 2;
-        const cy = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+        const cx = (e.touches[0].clientX + e.touches[1].clientX) / 2 - r.left;
+        const cy = (e.touches[0].clientY + e.touches[1].clientY) / 2 - r.top;
         if (this.pinchDist > 0) this.zoom(d / this.pinchDist, cx, cy);
         this.pinchDist = d;
       }
-    }, {passive:false});
-    c.addEventListener('touchend', () => { this.isDragging = false; this.pinchDist = 0 });
+    }, { passive: false });
 
-    // Zoom buttons
-    document.getElementById('btnZoomIn').onclick = () => this.zoom(1.3, this.W/2, this.H/2);
-    document.getElementById('btnZoomOut').onclick = () => this.zoom(0.7, this.W/2, this.H/2);
+    c.addEventListener('touchend', () => { this.isDragging = false; this.pinchDist = 0; });
+
+    document.getElementById('btnZoomIn').onclick = () => this.zoom(1.4, this.W / 2, this.H / 2);
+    document.getElementById('btnZoomOut').onclick = () => this.zoom(0.7, this.W / 2, this.H / 2);
     document.getElementById('btnResetView').onclick = () => this.resetView();
   },
 
@@ -98,7 +107,6 @@ const TravelMap = {
   },
 
   onPointerMove(x, y) {
-    // Pan: move the center point
     const dx = (x - this.lastX) / this.scale;
     const dy = (y - this.lastY) / this.scale;
     this.centerLng -= dx;
@@ -109,17 +117,12 @@ const TravelMap = {
   },
 
   zoom(factor, cx, cy) {
-    const newScale = Math.max(this.baseScale * 0.5, Math.min(this.baseScale * 20, this.scale * factor));
-    // Zoom toward the cursor position
-    const lngAtCursor = this.centerLng + (cx - this.W/2) / this.scale;
-    const latAtCursor = this.centerLat - (cy - this.H/2) / this.scale;
-    
+    const newScale = Math.max(this.baseScale * 0.4, Math.min(this.baseScale * 30, this.scale * factor));
+    const lngAtCursor = this.centerLng + (cx - this.W / 2) / this.scale;
+    const latAtCursor = this.centerLat - (cy - this.H / 2) / this.scale;
     this.scale = newScale;
-    
-    // Adjust center so cursor stays at same geo position
-    this.centerLng = lngAtCursor - (cx - this.W/2) / this.scale;
-    this.centerLat = latAtCursor + (cy - this.H/2) / this.scale;
-    
+    this.centerLng = lngAtCursor - (cx - this.W / 2) / this.scale;
+    this.centerLat = latAtCursor + (cy - this.H / 2) / this.scale;
     this.draw();
   },
 
@@ -128,114 +131,227 @@ const TravelMap = {
     this.animFrame = requestAnimationFrame(() => this._draw());
   },
 
+  // Draw GeoJSON polygon ring
+  _drawRing(ctx, coords) {
+    if (!coords || coords.length < 2) return;
+    const [x0, y0] = this.project(coords[0][1], coords[0][0]);
+    ctx.moveTo(x0, y0);
+    for (let i = 1; i < coords.length; i++) {
+      const [x, y] = this.project(coords[i][1], coords[i][0]);
+      ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+  },
+
+  _drawGeo(ctx) {
+    if (!this.geoData) return;
+    ctx.beginPath();
+    for (const feature of this.geoData.features) {
+      const geom = feature.geometry;
+      if (!geom) continue;
+      if (geom.type === 'Polygon') {
+        for (const ring of geom.coordinates) this._drawRing(ctx, ring);
+      } else if (geom.type === 'MultiPolygon') {
+        for (const poly of geom.coordinates)
+          for (const ring of poly) this._drawRing(ctx, ring);
+      }
+    }
+    ctx.fillStyle = 'rgba(20, 30, 50, 0.85)';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(59, 130, 246, 0.25)';
+    ctx.lineWidth = 0.8;
+    ctx.stroke();
+  },
+
   _draw() {
     const ctx = this.ctx;
     const W = this.W, H = this.H;
     ctx.clearRect(0, 0, W, H);
 
-    // Background
-    ctx.fillStyle = '#0a0f1a';
+    // Background gradient
+    const bgGrad = ctx.createRadialGradient(W / 2, H / 2, 0, W / 2, H / 2, Math.max(W, H));
+    bgGrad.addColorStop(0, '#0d1b2e');
+    bgGrad.addColorStop(1, '#070d18');
+    ctx.fillStyle = bgGrad;
     ctx.fillRect(0, 0, W, H);
 
+    // Draw geographic borders
+    this._drawGeo(ctx);
+
+    // Empty state
     const trips = Store.getAll();
     if (trips.length === 0) {
-      ctx.fillStyle = '#6b7280';
+      ctx.fillStyle = 'rgba(107, 114, 128, 0.8)';
       ctx.font = '14px -apple-system, sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText('添加行程后，您的旅行足迹将在这里展现', W/2, H/2);
+      ctx.fillText('添加行程后，您的旅行足迹将在这里展现', W / 2, H / 2 + 20);
       return;
     }
 
-    // Draw routes
+    // Count route frequency
+    const routeFreq = {};
+    trips.forEach(t => {
+      const key = `${t.fromLat?.toFixed(2)},${t.fromLng?.toFixed(2)}-${t.toLat?.toFixed(2)},${t.toLng?.toFixed(2)}`;
+      routeFreq[key] = (routeFreq[key] || 0) + 1;
+    });
+
     const flights = trips.filter(t => t.type === 'flight' && t.fromLat != null && t.toLat != null);
     const trains = trips.filter(t => t.type === 'train' && t.fromLat != null && t.toLat != null);
 
-    // Draw train routes (green, straight lines)
+    // Draw train routes (green, solid lines with glow)
     trains.forEach(t => {
       const [x1, y1] = this.project(t.fromLat, t.fromLng);
       const [x2, y2] = this.project(t.toLat, t.toLng);
+      const key = `${t.fromLat?.toFixed(2)},${t.fromLng?.toFixed(2)}-${t.toLat?.toFixed(2)},${t.toLng?.toFixed(2)}`;
+      const freq = routeFreq[key] || 1;
+      const lw = 1 + freq * 0.5;
+
+      // Glow
       ctx.beginPath();
       ctx.moveTo(x1, y1);
       ctx.lineTo(x2, y2);
-      ctx.strokeStyle = 'rgba(16,185,129,0.4)';
-      ctx.lineWidth = 1.5;
+      ctx.strokeStyle = 'rgba(16,185,129,0.15)';
+      ctx.lineWidth = lw + 4;
       ctx.stroke();
+
+      // Line
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.lineTo(x2, y2);
+      ctx.strokeStyle = 'rgba(16,185,129,0.7)';
+      ctx.lineWidth = lw;
+      ctx.setLineDash([4, 3]);
+      ctx.stroke();
+      ctx.setLineDash([]);
     });
 
     // Draw flight routes (amber, curved arcs)
     flights.forEach(f => {
       const [x1, y1] = this.project(f.fromLat, f.fromLng);
       const [x2, y2] = this.project(f.toLat, f.toLng);
+      const key = `${f.fromLat?.toFixed(2)},${f.fromLng?.toFixed(2)}-${f.toLat?.toFixed(2)},${f.toLng?.toFixed(2)}`;
+      const freq = routeFreq[key] || 1;
+      const lw = 1 + freq * 0.5;
+
       const mx = (x1 + x2) / 2;
       const my = (y1 + y2) / 2;
       const dist = Math.hypot(x2 - x1, y2 - y1);
-      // Arc height proportional to distance
-      const arcH = dist * 0.2;
+      const arcH = dist * 0.22;
       const angle = Math.atan2(y2 - y1, x2 - x1);
       const cpx = mx - arcH * Math.sin(angle);
       const cpy = my + arcH * Math.cos(angle);
 
+      // Glow
       ctx.beginPath();
       ctx.moveTo(x1, y1);
       ctx.quadraticCurveTo(cpx, cpy, x2, y2);
-      ctx.strokeStyle = 'rgba(245,158,11,0.5)';
-      ctx.lineWidth = 1.5;
+      ctx.strokeStyle = 'rgba(245,158,11,0.12)';
+      ctx.lineWidth = lw + 5;
       ctx.stroke();
+
+      // Animated-style gradient arc
+      const grad = ctx.createLinearGradient(x1, y1, x2, y2);
+      grad.addColorStop(0, 'rgba(245,158,11,0.4)');
+      grad.addColorStop(0.5, 'rgba(251,191,36,0.9)');
+      grad.addColorStop(1, 'rgba(245,158,11,0.4)');
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.quadraticCurveTo(cpx, cpy, x2, y2);
+      ctx.strokeStyle = grad;
+      ctx.lineWidth = lw;
+      ctx.stroke();
+
+      // Arrow at destination
+      if (dist > 30) {
+        const t = 0.85;
+        const ax = (1 - t) * (1 - t) * x1 + 2 * (1 - t) * t * cpx + t * t * x2;
+        const ay = (1 - t) * (1 - t) * y1 + 2 * (1 - t) * t * cpy + t * t * y2;
+        const dx2 = 2 * (1 - t) * (cpx - x1) + 2 * t * (x2 - cpx);
+        const dy2 = 2 * (1 - t) * (cpy - y1) + 2 * t * (y2 - cpy);
+        const arrAngle = Math.atan2(dy2, dx2);
+        const arrowSize = Math.min(6, dist * 0.06);
+        ctx.beginPath();
+        ctx.moveTo(ax + arrowSize * Math.cos(arrAngle), ay + arrowSize * Math.sin(arrAngle));
+        ctx.lineTo(ax + arrowSize * Math.cos(arrAngle + 2.5), ay + arrowSize * Math.sin(arrAngle + 2.5));
+        ctx.lineTo(ax + arrowSize * Math.cos(arrAngle - 2.5), ay + arrowSize * Math.sin(arrAngle - 2.5));
+        ctx.closePath();
+        ctx.fillStyle = 'rgba(251,191,36,0.85)';
+        ctx.fill();
+      }
     });
 
-    // Collect unique endpoints
-    const endpoints = new Map(); // key: "lat,lng" -> { lat, lng, city, type, count }
+    // Collect endpoints
+    const endpoints = new Map();
     [...flights, ...trains].forEach(t => {
-      const addPoint = (lat, lng, city, type) => {
+      const addPoint = (lat, lng, city, type, code) => {
+        if (!lat || !lng) return;
         const key = `${lat.toFixed(3)},${lng.toFixed(3)}`;
-        if (!endpoints.has(key)) {
-          endpoints.set(key, { lat, lng, city, types: new Set(), count: 0 });
-        }
+        if (!endpoints.has(key)) endpoints.set(key, { lat, lng, city, city2: city, types: new Set(), count: 0, codes: new Set() });
         const ep = endpoints.get(key);
         ep.types.add(type);
         ep.count++;
+        if (code) ep.codes.add(code);
       };
-      addPoint(t.fromLat, t.fromLng, t.fromCity, t.type);
-      addPoint(t.toLat, t.toLng, t.toCity, t.type);
+      addPoint(t.fromLat, t.fromLng, t.fromCity, t.type, t.fromCode || t.fromStation);
+      addPoint(t.toLat, t.toLng, t.toCity, t.type, t.toCode || t.toStation);
     });
 
     // Draw endpoints
+    const zoom = this.scale / this.baseScale;
     endpoints.forEach(ep => {
       const [x, y] = this.project(ep.lat, ep.lng);
-      if (x < -20 || x > W + 20 || y < -20 || y > H + 20) return;
+      if (x < -30 || x > W + 30 || y < -30 || y > H + 30) return;
 
       const hasFlight = ep.types.has('flight');
       const hasTrain = ep.types.has('train');
-      const r = Math.min(4 + ep.count * 0.5, 8);
+      const r = Math.min(3 + ep.count * 1.2, 9);
+      const color = hasFlight ? '#f59e0b' : '#10b981';
 
-      // Glow
-      const grad = ctx.createRadialGradient(x, y, 0, x, y, r * 3);
-      const color = hasFlight ? 'rgba(245,158,11,' : 'rgba(16,185,129,';
-      grad.addColorStop(0, color + '0.3)');
-      grad.addColorStop(1, color + '0)');
-      ctx.fillStyle = grad;
-      ctx.fillRect(x - r*3, y - r*3, r*6, r*6);
-
-      // Dot
+      // Outer pulse ring
       ctx.beginPath();
-      ctx.arc(x, y, r, 0, Math.PI * 2);
-      ctx.fillStyle = hasFlight ? '#f59e0b' : '#10b981';
+      ctx.arc(x, y, r * 2.5, 0, Math.PI * 2);
+      ctx.fillStyle = hasFlight ? 'rgba(245,158,11,0.08)' : 'rgba(16,185,129,0.08)';
       ctx.fill();
 
+      // Glow ring
+      ctx.beginPath();
+      ctx.arc(x, y, r * 1.8, 0, Math.PI * 2);
+      ctx.fillStyle = hasFlight ? 'rgba(245,158,11,0.15)' : 'rgba(16,185,129,0.15)';
+      ctx.fill();
+
+      // Main dot
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, Math.PI * 2);
+      ctx.fillStyle = color;
+      ctx.fill();
+
+      // Inner core (white shine)
+      ctx.beginPath();
+      ctx.arc(x, y, r * 0.45, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(255,255,255,0.6)';
+      ctx.fill();
+
+      // Second ring if both types
       if (hasFlight && hasTrain) {
         ctx.beginPath();
-        ctx.arc(x, y, r * 0.5, 0, Math.PI * 2);
-        ctx.fillStyle = '#10b981';
-        ctx.fill();
+        ctx.arc(x, y, r + 3, 0, Math.PI * 2);
+        ctx.strokeStyle = '#10b981';
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([3, 2]);
+        ctx.stroke();
+        ctx.setLineDash([]);
       }
 
-      // Label
-      const zoom = this.scale / this.baseScale;
-      if (zoom > 1.5 || ep.count >= 3) {
-        ctx.fillStyle = '#d1d5db';
-        ctx.font = `${Math.max(9, 11)}px -apple-system, sans-serif`;
+      // City label
+      if (ep.city && (zoom >= 1.2 || ep.count >= 2)) {
+        ctx.font = `bold ${Math.round(9 + Math.min(ep.count, 3))}px -apple-system, sans-serif`;
         ctx.textAlign = 'center';
-        ctx.fillText(ep.city || '', x, y - r - 4);
+        // Shadow
+        ctx.fillStyle = 'rgba(7,13,24,0.9)';
+        ctx.fillText(ep.city, x + 1, y - r - 4);
+        // Text
+        ctx.fillStyle = hasFlight ? '#fbbf24' : '#34d399';
+        ctx.fillText(ep.city, x, y - r - 5);
       }
     });
   },
@@ -245,8 +361,7 @@ const TravelMap = {
     const flights = trips.filter(t => t.type === 'flight');
     const trains = trips.filter(t => t.type === 'train');
     const cities = new Set();
-    trips.forEach(t => { if(t.fromCity) cities.add(t.fromCity); if(t.toCity) cities.add(t.toCity); });
-    
+    trips.forEach(t => { if (t.fromCity) cities.add(t.fromCity); if (t.toCity) cities.add(t.toCity); });
     document.getElementById('mapFlightCount').textContent = flights.length + ' 次飞行';
     document.getElementById('mapTrainCount').textContent = trains.length + ' 次高铁';
     document.getElementById('mapCityCount').textContent = cities.size + ' 个城市';
