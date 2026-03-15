@@ -34,19 +34,25 @@ const TravelMap = {
   },
 
   resetView() {
-    // Center on China, scale to fit
-    this.baseScale = Math.min(this.W / 60, this.H / 40);
+    // China bounds: approximately 73°E-135°E, 18°N-54°N
+    // Center: ~105°E, 35°N
+    // Map needs to fit 62° longitude and 36° latitude
+    const chinaLngSpan = 62;  // degrees
+    const chinaLatSpan = 36;  // degrees
+    const chinaCenterLng = 105;
+    const chinaCenterLat = 35;
+    
+    this.baseScale = Math.min(this.W / chinaLngSpan, this.H / chinaLatSpan) * 0.9; // 90% to have some margin
     this.scale = this.baseScale;
-    // Center: ~105E, 35N
-    this.offsetX = this.W / 2 - 105 * this.scale;
-    this.offsetY = this.H / 2 + 35 * this.scale;
+    this.centerLng = chinaCenterLng;
+    this.centerLat = chinaCenterLat;
     this.draw();
   },
 
-  // Mercator-like projection (simple equirectangular for China)
+  // Equirectangular projection centered on China
   project(lat, lng) {
-    const x = lng * this.scale + this.offsetX;
-    const y = -lat * this.scale + this.offsetY;
+    const x = this.W / 2 + (lng - this.centerLng) * this.scale;
+    const y = this.H / 2 - (lat - this.centerLat) * this.scale;
     return [x, y];
   },
 
@@ -92,8 +98,11 @@ const TravelMap = {
   },
 
   onPointerMove(x, y) {
-    this.offsetX += x - this.lastX;
-    this.offsetY += y - this.lastY;
+    // Pan: move the center point
+    const dx = (x - this.lastX) / this.scale;
+    const dy = (y - this.lastY) / this.scale;
+    this.centerLng -= dx;
+    this.centerLat += dy;
     this.lastX = x;
     this.lastY = y;
     this.draw();
@@ -101,10 +110,16 @@ const TravelMap = {
 
   zoom(factor, cx, cy) {
     const newScale = Math.max(this.baseScale * 0.5, Math.min(this.baseScale * 20, this.scale * factor));
-    const ratio = newScale / this.scale;
-    this.offsetX = cx - (cx - this.offsetX) * ratio;
-    this.offsetY = cy - (cy - this.offsetY) * ratio;
+    // Zoom toward the cursor position
+    const lngAtCursor = this.centerLng + (cx - this.W/2) / this.scale;
+    const latAtCursor = this.centerLat - (cy - this.H/2) / this.scale;
+    
     this.scale = newScale;
+    
+    // Adjust center so cursor stays at same geo position
+    this.centerLng = lngAtCursor - (cx - this.W/2) / this.scale;
+    this.centerLat = latAtCursor + (cy - this.H/2) / this.scale;
+    
     this.draw();
   },
 
