@@ -45,6 +45,13 @@ const Trips = {
     document.getElementById('filterType').onchange = () => this.render();
     document.getElementById('filterYear').onchange = () => this.render();
     document.getElementById('filterSort').onchange = () => this.render();
+    
+    // Search
+    let searchTimer;
+    document.getElementById('tripSearch').addEventListener('input', (e) => {
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(() => this.render(), 200);
+    });
 
     // Add trip button
     document.getElementById('btnAddTrip').onclick = () => this.openAdd();
@@ -284,6 +291,7 @@ const Trips = {
     const type = document.getElementById('filterType').value;
     const yearVal = document.getElementById('filterYear').value;
     const sort = document.getElementById('filterSort').value;
+    const searchQuery = (document.getElementById('tripSearch').value || '').trim().toLowerCase();
 
     let trips = Store.getAll();
 
@@ -291,6 +299,16 @@ const Trips = {
     if (type !== 'all') trips = trips.filter(t => t.type === type);
     // Filter by year
     if (yearVal !== 'all') trips = trips.filter(t => getYear(t.date) === parseInt(yearVal));
+    // Filter by search query
+    if (searchQuery) {
+      trips = trips.filter(t => {
+        const searchFields = [
+          t.fromCity, t.toCity, t.fromStation, t.toStation,
+          t.flightNo, t.trainNo, t.fromCode, t.toCode, t.note
+        ].filter(Boolean).join(' ').toLowerCase();
+        return searchFields.includes(searchQuery);
+      });
+    }
     // Sort
     if (sort === 'oldest') trips = [...trips].reverse();
 

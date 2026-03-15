@@ -67,6 +67,12 @@ header{position:fixed;top:0;left:0;right:0;height:calc(var(--header-h)+var(--saf
 .map-tooltip .tt-row{display:flex;justify-content:space-between;gap:16px;color:var(--text2);margin-top:3px}
 .map-tooltip .tt-row span:last-child{color:var(--text);font-weight:600}
 
+/* ===== Trip Search ===== */
+.search-bar{margin-bottom:8px}
+.search-bar input{width:100%;padding:10px 14px;border-radius:20px;border:1px solid var(--bg3);background:var(--bg2);color:var(--text);font-size:14px;outline:none;transition:all .2s}
+.search-bar input:focus{border-color:var(--accent);background:var(--bg)}
+.search-bar input::placeholder{color:var(--text3)}
+
 /* ===== Trip List ===== */
 .filter-row{display:flex;gap:8px}
 .filter-row select{flex:1;padding:10px 8px;border-radius:var(--radius-sm);border:1px solid var(--bg3);background:var(--bg2);color:var(--text);font-size:13px;-webkit-appearance:none;appearance:none;min-height:40px}
