@@ -8,6 +8,8 @@ const TravelMap = {
   centerLat: 35,
   baseScale: 1,
   isDragging: false,
+  _animPhase: 0,
+  _animFrame: null,
   lastX: 0, lastY: 0,
   pinchDist: 0,
   animFrame: null,
@@ -154,7 +156,24 @@ const TravelMap = {
 
   draw() {
     if (this.animFrame) cancelAnimationFrame(this.animFrame);
-    this.animFrame = requestAnimationFrame(() => this._draw());
+    this._startAnimation();
+  },
+
+  _startAnimation() {
+    const animate = () => {
+      this._animPhase = (this._animPhase + 0.003) % 1; // Slow smooth movement
+      this._draw();
+      this._animFrame = requestAnimationFrame(animate);
+    };
+    if (this._animFrame) cancelAnimationFrame(this._animFrame);
+    this._animFrame = requestAnimationFrame(animate);
+  },
+
+  stopAnimation() {
+    if (this._animFrame) {
+      cancelAnimationFrame(this._animFrame);
+      this._animFrame = null;
+    }
   },
 
   // Draw GeoJSON polygon ring
@@ -312,6 +331,42 @@ const TravelMap = {
         ctx.fillStyle = 'rgba(251,191,36,0.85)';
         ctx.fill();
       }
+    });
+
+    // Draw animated plane icons on flight routes
+    const phase = this._animPhase;
+    flights.forEach((f, i) => {
+      const [x1, y1] = this.project(f.fromLat, f.fromLng);
+      const [x2, y2] = this.project(f.toLat, f.toLng);
+      const dist = Math.hypot(x2 - x1, y2 - y1);
+      if (dist < 20) return;
+
+      const arcH = dist * 0.22;
+      const angle = Math.atan2(y2 - y1, x2 - x1);
+      const mx = (x1 + x2) / 2;
+      const my = (y1 + y2) / 2;
+      const cpx = mx - arcH * Math.sin(angle);
+      const cpy = my + arcH * Math.cos(angle);
+
+      // Each plane has different phase offset
+      const t = ((phase + i * 0.15) % 1);
+      const px = (1 - t) * (1 - t) * x1 + 2 * (1 - t) * t * cpx + t * t * x2;
+      const py = (1 - t) * (1 - t) * y1 + 2 * (1 - t) * t * cpy + t * t * y2;
+      // Direction tangent
+      const dx = 2 * (1 - t) * (cpx - x1) + 2 * t * (x2 - cpx);
+      const dy = 2 * (1 - t) * (cpy - y1) + 2 * t * (y2 - cpy);
+      const dir = Math.atan2(dy, dx);
+
+      ctx.save();
+      ctx.translate(px, py);
+      ctx.rotate(dir);
+      const planeSize = Math.max(12, Math.min(18, dist * 0.08));
+      ctx.font = `${planeSize}px sans-serif`;
+      ctx.fillStyle = '#fbbf24';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('✈', 0, 0);
+      ctx.restore();
     });
 
     // Collect endpoints
