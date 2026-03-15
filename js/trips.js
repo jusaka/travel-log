@@ -431,20 +431,34 @@ const Trips = {
       const no = isF ? (t.flightNo || '') : (t.trainNo || '');
       const dur = t.duration ? fmtDuration(t.duration) : '';
       const dist = t.distance ? fmtDist(t.distance) : '';
-      const detailParts = [no, dur].filter(Boolean).join(' · ');
+      const timeStr = t.depTime ? t.depTime : '';
+      const detailParts = [no, timeStr, dur].filter(Boolean).join(' · ');
+      const fromLabel = isF ? (t.fromCode || t.fromCity || '?') : (t.fromStation || t.fromCity || '?');
+      const toLabel = isF ? (t.toCode || t.toCity || '?') : (t.toStation || t.toCity || '?');
+      const airline = isF && t.airline ? (AIRLINES[t.airline]?.name || t.airline) : '';
 
-      return `<div class="trip-card" data-id="${t.id}">
+      return `<div class="trip-card ${isF ? 'flight-card' : 'train-card'}" data-id="${t.id}">
         <div class="trip-card-header">
           <span class="trip-date">${fmtDate(t.date)}</span>
           ${typeBadge}
         </div>
-        <div class="trip-route">
-          <span class="trip-city">${escHtml(t.fromCity || t.fromStation || '?')}</span>
-          <span class="trip-arrow">→</span>
-          <span class="trip-city">${escHtml(t.toCity || t.toStation || '?')}</span>
+        <div class="trip-route" style="margin:10px 0">
+          <div style="text-align:center">
+            <div class="trip-city">${escHtml(t.fromCity || t.fromStation || '?')}</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:2px">${escHtml(fromLabel)}</div>
+          </div>
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px">
+            <div style="font-size:10px;color:var(--text3)">${dur || ''}</div>
+            <div style="height:1px;width:100%;background:linear-gradient(90deg,transparent,var(--text3),transparent)"></div>
+            <div style="font-size:10px;color:${isF ? 'var(--flight)' : 'var(--train)'}">→</div>
+          </div>
+          <div style="text-align:center">
+            <div class="trip-city">${escHtml(t.toCity || t.toStation || '?')}</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:2px">${escHtml(toLabel)}</div>
+          </div>
         </div>
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          ${detailParts ? `<div class="trip-detail">${escHtml(detailParts)}</div>` : '<div></div>'}
+        <div style="display:flex;justify-content:space-between;align-items:center;padding-top:8px;border-top:1px solid var(--bg3)">
+          <div style="font-size:12px;color:var(--text3)">${escHtml([no, airline].filter(Boolean).join(' · '))}</div>
           ${dist ? `<span class="trip-km">${dist}</span>` : ''}
         </div>
       </div>`;

@@ -79,7 +79,9 @@ header{position:fixed;top:0;left:0;right:0;height:calc(var(--header-h)+var(--saf
 .filter-row{display:flex;gap:8px}
 .filter-row select{flex:1;padding:10px 8px;border-radius:var(--radius-sm);border:1px solid var(--bg3);background:var(--bg2);color:var(--text);font-size:13px;-webkit-appearance:none;appearance:none;min-height:40px}
 .trip-list{padding:8px 12px 20px}
-.trip-card{background:var(--bg2);border-radius:var(--radius);padding:14px;margin-bottom:8px;cursor:pointer;transition:transform .1s,box-shadow .2s;border:1px solid var(--bg3);animation:slideIn .3s ease backwards}
+.trip-card{background:var(--bg2);border-radius:var(--radius);padding:14px;margin-bottom:8px;cursor:pointer;transition:transform .1s,box-shadow .2s;border:1px solid var(--bg3);border-left:3px solid var(--bg4);animation:slideIn .3s ease backwards}
+.trip-card.flight-card{border-left-color:var(--flight)}
+.trip-card.train-card{border-left-color:var(--train)}
 .trip-card:nth-child(1){animation-delay:0ms}
 .trip-card:nth-child(2){animation-delay:40ms}
 .trip-card:nth-child(3){animation-delay:80ms}
