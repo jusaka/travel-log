@@ -369,12 +369,15 @@ const TravelMap = {
       }
 
       // City label
-      if (ep.city && (zoom >= 1.2 || ep.count >= 2)) {
-        ctx.font = `bold ${Math.round(9 + Math.min(ep.count, 3))}px -apple-system, sans-serif`;
+      if (ep.city && (zoom >= 1.0 || ep.count >= 2)) {
+        const fontSize = Math.round(9 + Math.min(ep.count, 3) + (zoom > 1.5 ? 2 : 0));
+        ctx.font = `bold ${fontSize}px -apple-system, sans-serif`;
         ctx.textAlign = 'center';
-        // Shadow
-        ctx.fillStyle = 'rgba(7,13,24,0.9)';
-        ctx.fillText(ep.city, x + 1, y - r - 4);
+        // Shadow/stroke for readability
+        ctx.strokeStyle = 'rgba(7,13,24,0.9)';
+        ctx.lineWidth = 3;
+        ctx.lineJoin = 'round';
+        ctx.strokeText(ep.city, x, y - r - 5);
         // Text
         ctx.fillStyle = hasFlight ? '#fbbf24' : '#34d399';
         ctx.fillText(ep.city, x, y - r - 5);
