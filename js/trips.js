@@ -90,9 +90,17 @@ const Trips = {
       });
     });
 
-    // Close on blur
+    // Auto-select first result on blur if not already selected
     input.addEventListener('blur', () => {
-      setTimeout(() => results.classList.remove('show'), 200);
+      setTimeout(() => {
+        if (!input.dataset.lat) {
+          const firstResult = results.querySelector('.search-result');
+          if (firstResult) {
+            firstResult.click();
+          }
+        }
+        results.classList.remove('show');
+      }, 200);
     });
   },
 
@@ -314,7 +322,7 @@ const Trips = {
       const no = isF ? (t.flightNo || '') : (t.trainNo || '');
       const dur = t.duration ? fmtDuration(t.duration) : '';
       const dist = t.distance ? fmtDist(t.distance) : '';
-      const detail = [no, dur, dist].filter(Boolean).join(' · ');
+      const detailParts = [no, dur].filter(Boolean).join(' · ');
 
       return `<div class="trip-card" data-id="${t.id}">
         <div class="trip-card-header">
@@ -326,7 +334,10 @@ const Trips = {
           <span class="trip-arrow">→</span>
           <span class="trip-city">${escHtml(t.toCity || t.toStation || '?')}</span>
         </div>
-        ${detail ? `<div class="trip-detail">${escHtml(detail)}</div>` : ''}
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          ${detailParts ? `<div class="trip-detail">${escHtml(detailParts)}</div>` : '<div></div>'}
+          ${dist ? `<span class="trip-km">${dist}</span>` : ''}
+        </div>
       </div>`;
     }).join('');
 

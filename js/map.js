@@ -80,12 +80,32 @@ const TravelMap = {
     c.addEventListener('touchstart', e => {
       if (e.touches.length === 1) {
         const r = c.getBoundingClientRect();
-        this.onPointerDown(e.touches[0].clientX - r.left, e.touches[0].clientY - r.top);
+        const tx = e.touches[0].clientX - r.left;
+        const ty = e.touches[0].clientY - r.top;
+        this._touchStartX = tx;
+        this._touchStartY = ty;
+        this._touchStartTime = Date.now();
+        this.onPointerDown(tx, ty);
       } else if (e.touches.length === 2) {
         this.pinchDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
         this.isDragging = false;
       }
     }, { passive: true });
+
+    c.addEventListener('touchend', e => {
+      this.isDragging = false;
+      this.pinchDist = 0;
+      // Detect tap (short, minimal movement)
+      if (this._touchStartTime && Date.now() - this._touchStartTime < 300) {
+        const r = c.getBoundingClientRect();
+        const endX = e.changedTouches[0]?.clientX - r.left || this._touchStartX;
+        const endY = e.changedTouches[0]?.clientY - r.top || this._touchStartY;
+        if (Math.hypot(endX - this._touchStartX, endY - this._touchStartY) < 10) {
+          this._checkHover(endX, endY, true);
+        }
+      }
+      this._touchStartTime = 0;
+    });
 
     c.addEventListener('touchmove', e => {
       e.preventDefault();
@@ -100,8 +120,6 @@ const TravelMap = {
         this.pinchDist = d;
       }
     }, { passive: false });
-
-    c.addEventListener('touchend', () => { this.isDragging = false; this.pinchDist = 0; });
 
     document.getElementById('btnZoomIn').onclick = () => this.zoom(1.4, this.W / 2, this.H / 2);
     document.getElementById('btnZoomOut').onclick = () => this.zoom(0.7, this.W / 2, this.H / 2);
@@ -364,7 +382,7 @@ const TravelMap = {
     });
   },
 
-  _checkHover(mx, my) {
+  _checkHover(mx, my, isTap) {
     const trips = Store.getAll();
     if (!trips.length) return;
 
@@ -404,7 +422,13 @@ const TravelMap = {
           <div class="tt-row"><span>合计</span><span>${totalTrips} 次</span></div>`;
       }
     });
-    if (!found) tooltip.style.display = 'none';
+    if (!found) {
+      tooltip.style.display = 'none';
+    } else if (isTap) {
+      // Auto-hide after 3s on mobile tap
+      clearTimeout(this._tooltipTimer);
+      this._tooltipTimer = setTimeout(() => { tooltip.style.display = 'none'; }, 3000);
+    }
   },
 
   updateSummary() {
