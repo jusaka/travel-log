@@ -104,6 +104,29 @@
     }, 300);
   }, 800);
 
+  // Keyboard shortcuts
+  document.addEventListener('keydown', e => {
+    // Escape to close modal
+    if (e.key === 'Escape') {
+      const openModal = document.querySelector('.modal');
+      if (openModal) closeModal(openModal.id);
+    }
+    // N for new trip (when no modal open and not typing)
+    if (e.key === 'n' && !document.querySelector('.modal') && 
+        !['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName)) {
+      Trips.openAdd();
+    }
+    // 1-4 for tab switching
+    if (!document.querySelector('.modal') && !['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName)) {
+      const tabs = ['map', 'trips', 'stats', 'annual'];
+      const num = parseInt(e.key);
+      if (num >= 1 && num <= 4) {
+        const tab = document.querySelector(`[data-tab=${tabs[num-1]}]`);
+        if (tab) tab.click();
+      }
+    }
+  });
+
   // Render initial trip list
   Trips.render();
 })();

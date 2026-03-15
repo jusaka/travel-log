@@ -40,6 +40,7 @@ const Trips = {
     // Save button
     document.getElementById('btnSaveTrip').onclick = () => this.saveTrip();
     document.getElementById('btnDeleteTrip').onclick = () => this.deleteTrip();
+    document.getElementById('btnDuplicateTrip').onclick = () => this.duplicateTrip();
 
     // Filters
     document.getElementById('filterType').onchange = () => this.render();
@@ -115,6 +116,7 @@ const Trips = {
     this.editingId = null;
     document.getElementById('modalTitle').textContent = '添加行程';
     document.getElementById('btnDeleteTrip').style.display = 'none';
+    document.getElementById('btnDuplicateTrip').style.display = 'none';
     this.clearForm();
     // Default date to today
     const today = new Date().toISOString().split('T')[0];
@@ -129,6 +131,7 @@ const Trips = {
     this.editingId = id;
     document.getElementById('modalTitle').textContent = '编辑行程';
     document.getElementById('btnDeleteTrip').style.display = '';
+    document.getElementById('btnDuplicateTrip').style.display = '';
     this.clearForm();
 
     // Set type
@@ -285,6 +288,27 @@ const Trips = {
       TravelMap.updateSummary();
       Stats.render();
     });
+  },
+
+  duplicateTrip() {
+    if (!this.editingId) return;
+    const original = Store.getById(this.editingId);
+    if (!original) return;
+    
+    // Create a copy with new id and today's date
+    const copy = { ...original };
+    delete copy.id;
+    delete copy.createdAt;
+    copy.date = new Date().toISOString().split('T')[0];
+    
+    Store.add(copy);
+    closeModal('addTripModal');
+    showToast('已复制行程');
+    this.render();
+    TravelMap.draw();
+    TravelMap.updateSummary();
+    Stats.render();
+    Annual.render();
   },
 
   render() {

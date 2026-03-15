@@ -34,7 +34,9 @@ header{position:fixed;top:0;left:0;right:0;height:calc(var(--header-h)+var(--saf
 
 /* ===== Tab Navigation ===== */
 #tabNav{position:fixed;bottom:0;left:0;right:0;height:calc(var(--tab-h)+var(--safe-bottom));padding-bottom:var(--safe-bottom);display:flex;background:var(--bg2);border-top:1px solid var(--bg3);z-index:100}
-.tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border:none;background:none;color:var(--text3);font-size:10px;cursor:pointer;transition:color .2s;padding:4px 0;min-height:44px}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border:none;background:none;color:var(--text3);font-size:10px;cursor:pointer;transition:color .2s;padding:4px 0;min-height:44px;position:relative}
+.tab::after{content:'';position:absolute;bottom:0;left:20%;right:20%;height:2px;background:var(--accent);border-radius:1px;transform:scaleX(0);transition:transform .2s ease}
+.tab.active::after{transform:scaleX(1)}
 .tab svg{opacity:0.5;transition:opacity .2s}
 .tab.active{color:var(--accent)}
 .tab.active svg{opacity:1;stroke:var(--accent)}
@@ -77,7 +79,13 @@ header{position:fixed;top:0;left:0;right:0;height:calc(var(--header-h)+var(--saf
 .filter-row{display:flex;gap:8px}
 .filter-row select{flex:1;padding:10px 8px;border-radius:var(--radius-sm);border:1px solid var(--bg3);background:var(--bg2);color:var(--text);font-size:13px;-webkit-appearance:none;appearance:none;min-height:40px}
 .trip-list{padding:8px 12px 20px}
-.trip-card{background:var(--bg2);border-radius:var(--radius);padding:14px;margin-bottom:8px;cursor:pointer;transition:transform .1s,box-shadow .2s;border:1px solid var(--bg3)}
+.trip-card{background:var(--bg2);border-radius:var(--radius);padding:14px;margin-bottom:8px;cursor:pointer;transition:transform .1s,box-shadow .2s;border:1px solid var(--bg3);animation:slideIn .3s ease backwards}
+.trip-card:nth-child(1){animation-delay:0ms}
+.trip-card:nth-child(2){animation-delay:40ms}
+.trip-card:nth-child(3){animation-delay:80ms}
+.trip-card:nth-child(4){animation-delay:120ms}
+.trip-card:nth-child(5){animation-delay:160ms}
+.trip-card:nth-child(n+6){animation-delay:200ms}
 .trip-card:active{transform:scale(0.98);box-shadow:0 0 0 2px var(--accent)}
 .trip-card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
 .trip-date{font-size:12px;color:var(--text2)}
@@ -94,7 +102,13 @@ header{position:fixed;top:0;left:0;right:0;height:calc(var(--header-h)+var(--saf
 
 /* ===== Stats ===== */
 .stats-grid{padding:12px}
-.stat-card{background:var(--bg2);border-radius:var(--radius);padding:16px;margin-bottom:10px;border:1px solid var(--bg3)}
+.stat-card{background:var(--bg2);border-radius:var(--radius);padding:16px;margin-bottom:10px;border:1px solid var(--bg3);animation:slideIn .3s ease backwards}
+.stat-card:nth-child(1){animation-delay:0ms}
+.stat-card:nth-child(2){animation-delay:50ms}
+.stat-card:nth-child(3){animation-delay:100ms}
+.stat-card:nth-child(4){animation-delay:150ms}
+.stat-card:nth-child(5){animation-delay:200ms}
+.stat-card:nth-child(n+6){animation-delay:250ms}
 .stat-card h4{font-size:13px;color:var(--text2);margin-bottom:12px;font-weight:500}
 .stat-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--bg3)}
 .stat-row:last-child{border:none}
@@ -144,6 +158,7 @@ header{position:fixed;top:0;left:0;right:0;height:calc(var(--header-h)+var(--saf
 /* ===== Modal ===== */
 .modal{position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:200;display:flex;align-items:flex-end;justify-content:center;animation:fadeIn .2s}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes slideIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 .modal-content{background:var(--bg2);border-radius:var(--radius) var(--radius) 0 0;width:100%;max-width:500px;max-height:85vh;overflow-y:auto;animation:slideUp .3s ease;-webkit-overflow-scrolling:touch}
 @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
 .modal-large{max-height:90vh}
