@@ -435,20 +435,25 @@ const TravelMap = {
       ctx.restore();
     });
 
-    // Collect endpoints
+    // Collect endpoints - merge same-city airports
     const endpoints = new Map();
     [...flights, ...trains].forEach(t => {
-      const addPoint = (lat, lng, city, type, code) => {
+      const addPoint = (lat, lng, city, type) => {
         if (!lat || !lng) return;
-        const key = `${lat.toFixed(3)},${lng.toFixed(3)}`;
-        if (!endpoints.has(key)) endpoints.set(key, { lat, lng, city, city2: city, types: new Set(), count: 0, codes: new Set() });
+        // Group by city name to merge multi-airport cities (SHA+PVG→上海)
+        const key = city || `${lat.toFixed(3)},${lng.toFixed(3)}`;
+        if (!endpoints.has(key)) endpoints.set(key, { lat, lng, city, types: new Set(), count: 0, _lats: [], _lngs: [] });
         const ep = endpoints.get(key);
         ep.types.add(type);
         ep.count++;
-        if (code) ep.codes.add(code);
+        ep._lats.push(lat);
+        ep._lngs.push(lng);
+        // Use average position for multi-airport cities
+        ep.lat = ep._lats.reduce((a, b) => a + b) / ep._lats.length;
+        ep.lng = ep._lngs.reduce((a, b) => a + b) / ep._lngs.length;
       };
-      addPoint(t.fromLat, t.fromLng, t.fromCity, t.type, t.fromCode || t.fromStation);
-      addPoint(t.toLat, t.toLng, t.toCity, t.type, t.toCode || t.toStation);
+      addPoint(t.fromLat, t.fromLng, t.fromCity, t.type);
+      addPoint(t.toLat, t.toLng, t.toCity, t.type);
     });
 
     // Draw endpoints
@@ -563,12 +568,17 @@ const TravelMap = {
     trips.forEach(t => {
       const addPoint = (lat, lng, city, type) => {
         if (!lat || !lng) return;
-        const key = `${lat.toFixed(3)},${lng.toFixed(3)}`;
-        if (!endpoints.has(key)) endpoints.set(key, { lat, lng, city, types: new Set(), flightCount: 0, trainCount: 0 });
+        // Group by city name (merge multi-airport cities)
+        const key = city || `${lat.toFixed(3)},${lng.toFixed(3)}`;
+        if (!endpoints.has(key)) endpoints.set(key, { lat, lng, city, types: new Set(), flightCount: 0, trainCount: 0, _lats: [], _lngs: [] });
         const ep = endpoints.get(key);
         ep.types.add(type);
         if (type === 'flight') ep.flightCount++;
         else ep.trainCount++;
+        ep._lats.push(lat);
+        ep._lngs.push(lng);
+        ep.lat = ep._lats.reduce((a, b) => a + b) / ep._lats.length;
+        ep.lng = ep._lngs.reduce((a, b) => a + b) / ep._lngs.length;
       };
       addPoint(t.fromLat, t.fromLng, t.fromCity, t.type);
       addPoint(t.toLat, t.toLng, t.toCity, t.type);

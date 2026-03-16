@@ -135,6 +135,16 @@ const Store = {
     });
     const busiestMonth = Object.entries(monthCounts).sort((a,b) => b[1] - a[1])[0];
 
+    // Top routes (merge bidirectional)
+    const routeCounts = {};
+    trips.forEach(t => {
+      const a = t.fromCity || '';
+      const b = t.toCity || '';
+      if (!a || !b) return;
+      const key = a < b ? `${a}↔${b}` : `${b}↔${a}`;
+      routeCounts[key] = (routeCounts[key] || 0) + 1;
+    });
+
     return {
       totalTrips: trips.length,
       flightCount: flights.length,
@@ -150,6 +160,7 @@ const Store = {
       airlines,
       topCities: Object.entries(cityCounts).sort((a,b)=>b[1]-a[1]).slice(0,10),
       topAirlines: Object.entries(airlines).sort((a,b)=>b[1]-a[1]).slice(0,5),
+      topRoutes: Object.entries(routeCounts).sort((a,b)=>b[1]-a[1]).slice(0,8),
       maxStreak,
       longestTrip,
       shortestTrip,

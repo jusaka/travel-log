@@ -23,7 +23,13 @@ html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFo
 
 /* ===== Loading ===== */
 .loading-screen{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--bg);z-index:9999}
-.loading-logo{font-size:48px;margin-bottom:16px;animation:pulse 1.5s infinite}
+.loading-globe{position:relative;width:80px;height:80px;margin-bottom:20px}
+.globe-ring{width:80px;height:80px;border:2px solid rgba(59,130,246,0.15);border-radius:50%;position:relative}
+.globe-ring::before{content:'';position:absolute;inset:-2px;border:2px solid transparent;border-top-color:var(--flight);border-radius:50%;animation:globeSpin 1.2s linear infinite}
+.globe-ring::after{content:'🌍';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:32px}
+.globe-plane{position:absolute;top:-8px;left:50%;transform:translateX(-50%);font-size:18px;color:var(--flight);animation:planeOrbit 1.2s linear infinite}
+@keyframes globeSpin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
+@keyframes planeOrbit{0%{top:-8px;left:50%;transform:translateX(-50%)}25%{top:50%;left:calc(100% + 4px);transform:translateY(-50%) rotate(90deg)}50%{top:calc(100% + 4px);left:50%;transform:translateX(-50%) rotate(180deg)}75%{top:50%;left:-12px;transform:translateY(-50%) rotate(270deg)}100%{top:-8px;left:50%;transform:translateX(-50%) rotate(360deg)}}
 .loading-text{font-size:20px;font-weight:600;color:var(--text);margin-bottom:24px;letter-spacing:2px}
 .loading-bar{width:120px;height:3px;background:var(--bg3);border-radius:2px;overflow:hidden}
 .loading-fill{width:0%;height:100%;background:linear-gradient(90deg,var(--flight),var(--accent));border-radius:2px;animation:loadFill 1s ease-out forwards}

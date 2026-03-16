@@ -125,6 +125,25 @@ const Stats = {
       </div>`;
     }
 
+    // Top routes
+    if (stats.topRoutes && stats.topRoutes.length > 0) {
+      const maxCount = stats.topRoutes[0][1];
+      html += `<div class="stat-card">
+        <h4>🔥 热门航线</h4>
+        <div class="bar-chart">
+          ${stats.topRoutes.map(([route, count]) => `
+            <div class="bar-item">
+              <span class="bar-label" style="font-size:12px">${escHtml(route)}</span>
+              <div class="bar-track">
+                <div class="bar-fill" style="width:${(count / maxCount * 100).toFixed(0)}%;background:linear-gradient(90deg,var(--flight),var(--accent))"></div>
+                <span class="bar-count">${count}次</span>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>`;
+    }
+
     // Monthly chart (current year)
     const now = new Date();
     const yearTrips = Store.getByYear(now.getFullYear());
