@@ -176,7 +176,7 @@ const Annual = {
         ${monthlyCounts.map((c, i) => {
           const h = c > 0 ? Math.max(12, (c / maxMonthCount) * 85) : 4;
           const color = c > 0 ? 'var(--accent)' : 'var(--bg3)';
-          return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:${c > 0 ? 'pointer' : 'default'}" ${c > 0 ? `onclick="document.querySelector('[data-tab=trips]').click();document.getElementById('tripSearch').value='';document.getElementById('filterYear').value='${this.year}';document.getElementById('filterType').value='all';Trips.render();setTimeout(()=>{const h=document.querySelectorAll('.trip-month-header');for(const el of h){if(el.dataset.month==='${i}'){el.scrollIntoView({behavior:'smooth',block:'start'});break;}}},100)"` : ''}>
+          return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:${c > 0 ? 'pointer' : 'default'}" ${c > 0 ? `onclick="document.querySelector('[data-tab=\\'trips\\']').click();document.getElementById('tripSearch').value='';document.getElementById('filterYear').value='${this.year}';document.getElementById('filterType').value='all';Trips.render();setTimeout(()=>{const h=document.querySelectorAll('.trip-month-header');for(const el of h){if(el.dataset.month==='${i}'){el.scrollIntoView({behavior:'smooth',block:'start'});break;}}},100)"` : ''}>
             ${c > 0 ? `<div style="font-size:10px;color:var(--text2);font-weight:600">${c}</div>` : '<div style="font-size:10px;color:transparent">0</div>'}
             <div style="width:100%;height:${h}px;background:${color};border-radius:3px 3px 0 0;transition:height .5s"></div>
             <div style="font-size:9px;color:var(--text3)">${monthNames[i]}</div>
@@ -696,21 +696,21 @@ const Annual = {
     return `<div class="annual-section">
       <h3>📆 出行热力图</h3>
       <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px">
-        <div style="display:flex;gap:2px;min-width:320px">
-          <div class="heatmap-weekdays" style="display:flex;flex-direction:column;gap:2px;font-size:8px;color:var(--text3);padding-right:3px;flex-shrink:0">
-            <div style="aspect-ratio:1;display:flex;align-items:center;visibility:hidden">-</div>
-            <div style="aspect-ratio:1;display:flex;align-items:center">一</div>
-            <div style="aspect-ratio:1;display:flex;align-items:center;visibility:hidden">-</div>
-            <div style="aspect-ratio:1;display:flex;align-items:center">三</div>
-            <div style="aspect-ratio:1;display:flex;align-items:center;visibility:hidden">-</div>
-            <div style="aspect-ratio:1;display:flex;align-items:center">五</div>
-            <div style="aspect-ratio:1;display:flex;align-items:center;visibility:hidden">-</div>
+        <div style="display:flex;gap:2px;min-width:750px">
+          <div class="heatmap-weekdays" style="display:flex;flex-direction:column;gap:2px;font-size:8px;color:var(--text3);padding-right:3px;flex-shrink:0;margin-top:4px">
+            <div style="width:10px;height:12px;display:flex;align-items:center;visibility:hidden">-</div>
+            <div style="width:10px;height:12px;display:flex;align-items:center">一</div>
+            <div style="width:10px;height:12px;display:flex;align-items:center;visibility:hidden">-</div>
+            <div style="width:10px;height:12px;display:flex;align-items:center">三</div>
+            <div style="width:10px;height:12px;display:flex;align-items:center;visibility:hidden">-</div>
+            <div style="width:10px;height:12px;display:flex;align-items:center">五</div>
+            <div style="width:10px;height:12px;display:flex;align-items:center;visibility:hidden">-</div>
           </div>
           <div style="flex:1;min-width:0">
-            <div class="heatmap-grid" style="min-width:290px">${cells}</div>
+            <div class="heatmap-grid">${cells}</div>
           </div>
         </div>
-        <div class="heatmap-months" style="min-width:320px;padding-left:16px">${monthLabels.map(m => `<span>${m}</span>`).join('')}</div>
+        <div class="heatmap-months" style="min-width:750px;padding-left:16px">${monthLabels.map(m => `<span>${m}</span>`).join('')}</div>
       </div>
       <div style="display:flex;align-items:center;gap:4px;justify-content:flex-end;margin-top:6px;font-size:10px;color:var(--text3)">
         少 <div class="heat-cell" style="width:10px;height:10px;display:inline-block"></div>

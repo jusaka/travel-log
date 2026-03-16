@@ -236,6 +236,7 @@ const TravelMap = {
   _draw() {
     const ctx = this.ctx;
     const W = this.W, H = this.H;
+    if (!W || !H || !isFinite(W) || !isFinite(H)) return;
     const isLight = document.documentElement.classList.contains('light');
     ctx.clearRect(0, 0, W, H);
 
@@ -793,6 +794,7 @@ const TravelMap = {
     if (!pb) return;
     const ctx = this.ctx;
     const W = this.W, H = this.H;
+    if (!W || !H || !isFinite(W) || !isFinite(H)) return;
     const isLight = document.documentElement.classList.contains('light');
 
     ctx.clearRect(0, 0, W, H);

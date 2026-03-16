@@ -558,8 +558,9 @@ const Trips = {
           t.flightNo, t.trainNo, t.fromCode, t.toCode, t.note
         ].filter(Boolean).join(' ');
         const lower = searchFields.toLowerCase();
-        const pinyin = toPinyinInitials(searchFields);
-        return lower.includes(searchQuery) || pinyin.includes(searchQuery);
+        const pinyinFull = toPinyinFull(searchFields);
+        const pinyinInit = toPinyinInitials(searchFields);
+        return lower.includes(searchQuery) || pinyinFull.includes(searchQuery) || pinyinInit.includes(searchQuery);
       });
     }
     

@@ -148,8 +148,8 @@ header{position:fixed;top:0;left:0;right:0;height:calc(var(--header-h)+var(--saf
 .bar-count{position:absolute;right:6px;top:50%;transform:translateY(-50%);font-size:11px;color:var(--text);font-weight:600}
 
 /* Heatmap */
-.heatmap-grid{display:grid;grid-template-columns:repeat(53,1fr);gap:2px;margin-top:8px}
-.heat-cell{aspect-ratio:1;border-radius:2px;background:var(--bg3)}
+.heatmap-grid{display:grid;grid-template-columns:repeat(53,12px);gap:2px;margin-top:4px}
+.heat-cell{width:12px;height:12px;border-radius:2px;background:var(--bg3)}
 .heat-cell.l1{background:rgba(59,130,246,0.2)}
 .heat-cell.l2{background:rgba(59,130,246,0.4)}
 .heat-cell.l3{background:rgba(59,130,246,0.6)}
