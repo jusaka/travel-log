@@ -148,7 +148,20 @@
   document.getElementById('btnCopyData').onclick = async () => {
     const trips = Store.getAll();
     if (!trips.length) { showToast('没有数据'); return; }
-    const data = Store.exportData();
+    // Export as CSV for better readability
+    const headers = ['date','type','fromCity','toCity','fromCode','toCode','fromStation','toStation','flightNo','trainNo','airline','depTime','arrTime','distance','duration','seatClass','seatType','seat','aircraft','price','groupId','note'];
+    const csvRows = [headers.join(',')];
+    trips.forEach(t => {
+      const row = headers.map(h => {
+        const val = t[h] ?? '';
+        if (typeof val === 'string' && (val.includes(',') || val.includes('"') || val.includes('\n'))) {
+          return '"' + val.replace(/"/g, '""') + '"';
+        }
+        return val;
+      });
+      csvRows.push(row.join(','));
+    });
+    const data = csvRows.join('\n');
     // Show a modal with textarea for manual copy (iOS clipboard API unreliable)
     let copyModal = document.getElementById('copyDataModal');
     if (!copyModal) {
