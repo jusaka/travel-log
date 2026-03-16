@@ -326,13 +326,16 @@
       </div>
       <div class="settings-section">
         <h4>数据管理</h4>
-        <button class="btn btn-full" id="btnCopyData">📋 复制到剪贴板</button>
-        <button class="btn btn-full" id="btnPasteData">📥 从剪贴板导入</button>
-        <div style="border-top:1px solid var(--border);margin:12px 0;padding-top:8px">
-          <button class="btn btn-full" id="btnExport" style="font-size:13px;opacity:.7">📤 导出文件 (JSON)</button>
-          <button class="btn btn-full" id="btnExportCSV" style="font-size:13px;opacity:.7">📊 导出文件 (CSV)</button>
-          <button class="btn btn-full" id="btnImport" style="font-size:13px;opacity:.7">📥 导入文件 (JSON/CSV)</button>
-        </div>
+        <button class="btn btn-full" id="btnCopyData">📤 备份数据（复制到剪贴板）</button>
+        <button class="btn btn-full" id="btnPasteData">📥 恢复数据（从剪贴板导入）</button>
+        <details style="margin-top:8px">
+          <summary style="font-size:12px;color:var(--text3);cursor:pointer;padding:6px 0">📁 文件导入导出...</summary>
+          <div style="display:flex;flex-direction:column;gap:6px;margin-top:6px">
+            <button class="btn btn-full" id="btnExport" style="font-size:12px">导出 JSON</button>
+            <button class="btn btn-full" id="btnExportCSV" style="font-size:12px">导出 CSV</button>
+            <button class="btn btn-full" id="btnImport" style="font-size:12px">导入文件 (JSON/CSV)</button>
+          </div>
+        </details>
         <input type="file" id="importFile" accept=".json,.csv" style="display:none">
         <button class="btn btn-full" id="btnAddSample">🎁 添加示例数据</button>
         <button class="btn btn-full" id="btnClearAll" style="color:var(--danger)">🗑️ 清空所有数据</button>
@@ -347,7 +350,7 @@
       </div>
       <div class="settings-section">
         <h4>关于</h4>
-        <p class="about-text">旅途纵横 v6.3<br>记录每一次出发，珍藏每一段旅程<br><span style="color:var(--text3);font-size:11px;margin-top:4px;display:block">Made with ❤️ by 和珅</span></p>
+        <p class="about-text">旅途纵横 v6.4<br>记录每一次出发，珍藏每一段旅程<br><span style="color:var(--text3);font-size:11px;margin-top:4px;display:block">Made with ❤️ by 和珅</span></p>
       </div>
     </div>
   </div>

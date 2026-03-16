@@ -1,4 +1,4 @@
-const CACHE_NAME = 'travellog-v20';
+const CACHE_NAME = 'travellog-v21';
 const ASSETS = [
   './',
   './index.html',
