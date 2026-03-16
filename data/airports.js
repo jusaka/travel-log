@@ -53,6 +53,7 @@ const AIRPORTS = {
   KWL: { city: '桂林', name: '两江', lat: 25.2181, lng: 110.0390 },
   ZUH: { city: '珠海', name: '金湾', lat: 22.0064, lng: 113.3760 },
   SWA: { city: '汕头', name: '揭阳潮汕', lat: 23.5520, lng: 116.5033 },
+  JDZ: { city: '景德镇', name: '罗家', lat: 29.3386, lng: 117.1762 },
   NGB: { city: '宁波', name: '栎社', lat: 29.8267, lng: 121.4612 },
   LJG: { city: '丽江', name: '三义', lat: 26.6800, lng: 100.2460 },
   JHG: { city: '西双版纳', name: '嘎洒', lat: 21.9739, lng: 100.7602 },
@@ -253,4 +254,7 @@ const AIRLINES = {
   BK: { name: '奥凯航空', color: '#003087' },
   TV: { name: '西藏航空', color: '#C8102E' },
   '9H': { name: '长安航空', color: '#8B0000' },
+  HX: { name: '香港航空', color: '#E4002B' },
+  Y8: { name: '金鹏航空', color: '#C8102E' },
+  FM: { name: '上海航空', color: '#CE0E2D' },
 };
