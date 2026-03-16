@@ -399,17 +399,24 @@ const Store = {
         trip.toLng = ap.lng;
         trip.toCity = trip.toCity || ap.city;
       }
-      if (trip.type === 'train' && trip.fromStation && STATIONS[trip.fromStation]) {
-        const st = STATIONS[trip.fromStation];
-        trip.fromLat = st.lat;
-        trip.fromLng = st.lng;
-        trip.fromCity = trip.fromCity || st.city;
+      if (trip.type === 'train' && trip.fromStation && !trip.fromLat) {
+        // Try exact match, then without '站' suffix
+        let st = STATIONS[trip.fromStation] || STATIONS[trip.fromStation.replace(/站$/, '')];
+        if (st) {
+          trip.fromLat = st.lat;
+          trip.fromLng = st.lng;
+          trip.fromCity = trip.fromCity || st.city;
+          trip.fromStation = trip.fromStation.replace(/站$/, '');
+        }
       }
-      if (trip.type === 'train' && trip.toStation && STATIONS[trip.toStation]) {
-        const st = STATIONS[trip.toStation];
-        trip.toLat = st.lat;
-        trip.toLng = st.lng;
-        trip.toCity = trip.toCity || st.city;
+      if (trip.type === 'train' && trip.toStation && !trip.toLat) {
+        let st = STATIONS[trip.toStation] || STATIONS[trip.toStation.replace(/站$/, '')];
+        if (st) {
+          trip.toLat = st.lat;
+          trip.toLng = st.lng;
+          trip.toCity = trip.toCity || st.city;
+          trip.toStation = trip.toStation.replace(/站$/, '');
+        }
       }
 
       // Calculate distance if missing
