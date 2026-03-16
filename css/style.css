@@ -254,8 +254,10 @@ textarea{resize:none;font-family:inherit}
   .bar-label{width:50px;font-size:11px}
   .stat-card{padding:12px}
   .annual-content{padding:0 12px 20px}
-  .form-row{flex-direction:column;gap:8px}
-  .form-group.arrow-sep{flex-direction:row;padding:0;font-size:16px;text-align:center}
+  .form-row{gap:8px}
+  .form-group label{font-size:12px}
+  .form-group input,.form-group select,.form-group textarea{font-size:14px}
+  .form-group.arrow-sep{font-size:16px;padding-bottom:4px}
   .modal-content{max-height:92vh;border-radius:16px 16px 0 0}
   #mapControls{right:8px;bottom:70px}
   .map-btn{width:36px;height:36px}
