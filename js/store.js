@@ -229,11 +229,7 @@ const Store = {
         }
         if (!t.airline && t.flightNo) t.airline = detectAirline(t.flightNo);
         if (t.depTime && t.arrTime && !t.duration) {
-          const [dh,dm] = t.depTime.split(':').map(Number);
-          const [ah,am] = t.arrTime.split(':').map(Number);
-          let mins = (ah*60+am) - (dh*60+dm);
-          if (mins < 0) mins += 24*60;
-          t.duration = mins;
+          t.duration = calcTripDuration(t.depTime, t.arrTime, t.fromCode, t.toCode);
         }
         this._trips.push(t);
         added++;

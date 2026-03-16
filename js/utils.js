@@ -1,5 +1,22 @@
 // ===== Utility functions =====
 
+// Polyfill: CanvasRenderingContext2D.roundRect (Safari < 16, Chrome < 99)
+if (typeof CanvasRenderingContext2D !== 'undefined' && !CanvasRenderingContext2D.prototype.roundRect) {
+  CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, radii) {
+    const r = typeof radii === 'number' ? radii : (radii?.[0] || 0);
+    this.moveTo(x + r, y);
+    this.lineTo(x + w - r, y);
+    this.arcTo(x + w, y, x + w, y + r, r);
+    this.lineTo(x + w, y + h - r);
+    this.arcTo(x + w, y + h, x + w - r, y + h, r);
+    this.lineTo(x + r, y + h);
+    this.arcTo(x, y + h, x, y + h - r, r);
+    this.lineTo(x, y + r);
+    this.arcTo(x, y, x + r, y, r);
+    return this;
+  };
+}
+
 function escHtml(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
@@ -37,12 +54,25 @@ function timeToMins(t) {
 }
 
 // Calculate trip duration in minutes from dep/arr times
-function calcTripDuration(depTime, arrTime) {
+// Handles timezone differences for international flights
+function calcTripDuration(depTime, arrTime, fromCode, toCode) {
   const dep = timeToMins(depTime);
   const arr = timeToMins(arrTime);
   if (dep === null || arr === null) return null;
   let diff = arr - dep;
   if (diff < 0) diff += 24 * 60; // overnight
+  // Adjust for timezone difference (times are local)
+  if (fromCode && toCode && typeof AIRPORT_TZ !== 'undefined') {
+    const fromTZ = AIRPORT_TZ[fromCode];
+    const toTZ = AIRPORT_TZ[toCode];
+    if (fromTZ != null && toTZ != null && fromTZ !== toTZ) {
+      // arr is in toTZ local, dep is in fromTZ local
+      // Real duration = naive diff - (toTZ - fromTZ) * 60
+      diff -= (toTZ - fromTZ) * 60;
+      if (diff < 0) diff += 24 * 60;
+      if (diff > 20 * 60) diff -= 24 * 60; // sanity: no flight > 20h
+    }
+  }
   return diff;
 }
 

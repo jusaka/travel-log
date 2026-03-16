@@ -233,7 +233,7 @@ const Trips = {
       trip.seatClass = document.getElementById('fClass').value;
       trip.note = document.getElementById('fNote').value;
       trip.distance = calcDistance(trip.fromLat, trip.fromLng, trip.toLat, trip.toLng);
-      trip.duration = calcTripDuration(trip.depTime, trip.arrTime);
+      trip.duration = calcTripDuration(trip.depTime, trip.arrTime, trip.fromCode, trip.toCode);
     } else {
       const date = document.getElementById('tDate').value;
       const fromEl = document.getElementById('tFrom');

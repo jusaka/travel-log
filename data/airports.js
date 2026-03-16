@@ -207,6 +207,35 @@ const STATIONS = {
   '香港西九龙': { city: '香港', lat: 22.3048, lng: 114.1622 },
 };
 
+// 机场UTC时区偏移 (小时)
+const AIRPORT_TZ = {
+  // 中国大陆+港澳台: UTC+8
+  PEK:8, PKX:8, SHA:8, PVG:8, CAN:8, SZX:8, TSN:8, CKG:8,
+  CTU:8, TFU:8, HGH:8, WUH:8, NKG:8, XIY:8, CSX:8, CGO:8,
+  KMG:8, SYX:8, HAK:8, TAO:8, DLC:8, SHE:8, HRB:8, CGQ:8,
+  TNA:8, FOC:8, XMN:8, NNG:8, KWE:8, URC:8, LHW:8, INC:8,
+  XNN:8, HET:8, LXA:8, WNZ:8, NTG:8, HFE:8, KHN:8, SJW:8,
+  TYN:8, KWL:8, ZUH:8, SWA:8, JDZ:8, NGB:8, LJG:8, JHG:8,
+  DYG:8, HYN:8, YNT:8, WEH:8,
+  HKG:8, MFM:8, TPE:8, TSA:8, KHH:8,
+  // 东南亚
+  SIN:8, KUL:8, MNL:8, SGN:7, HAN:7, DAD:7, CGK:7,
+  BKK:7, DMK:7, CNX:7, HKT:7, REP:7, RGN:6.5,
+  DPS:8, CEB:8,
+  // 日韩: UTC+9
+  NRT:9, HND:9, KIX:9, FUK:9, CTS:9, NGO:9,
+  ICN:9, GMP:9, PUS:9, CJU:9,
+  // 中东
+  DXB:4, DOH:3, IST:3,
+  // 欧洲 (标准时间，不考虑夏令时)
+  LHR:0, CDG:1, FRA:1, AMS:1, MUC:1, FCO:1, MAD:1,
+  // 美洲
+  LAX:-8, SFO:-8, SEA:-8, ORD:-6, JFK:-5,
+  YVR:-8, YYZ:-5,
+  // 大洋洲
+  SYD:11, MEL:11, AKL:12,
+};
+
 // 中国主要航司
 const AIRLINES = {
   CA: { name: '中国国航', color: '#E41E2B' },

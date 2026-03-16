@@ -1,4 +1,4 @@
-const CACHE_NAME = 'travellog-v12';
+const CACHE_NAME = 'travellog-v13';
 const ASSETS = [
   './',
   './index.html',
@@ -25,6 +25,17 @@ self.addEventListener('activate', e => {
   self.clients.claim();
 });
 
+// Network-first: try network, fall back to cache (fixes stale update problem)
 self.addEventListener('fetch', e => {
-  e.respondWith(caches.match(e.request).then(r => r || fetch(e.request)));
+  e.respondWith(
+    fetch(e.request)
+      .then(response => {
+        if (response.ok) {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then(c => c.put(e.request, clone));
+        }
+        return response;
+      })
+      .catch(() => caches.match(e.request))
+  );
 });

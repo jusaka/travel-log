@@ -211,19 +211,20 @@ const Stats = {
       ctx.fillStyle = tg;
       ctx.fill();
 
-      // Inner circle (donut hole)
+      // Inner circle (donut hole) - theme aware
       ctx.beginPath();
       ctx.arc(cx, cy, r * 0.55, 0, Math.PI * 2);
-      ctx.fillStyle = '#111827';
+      const isLight = document.documentElement.classList.contains('light');
+      ctx.fillStyle = isLight ? '#f9fafb' : '#111827';
       ctx.fill();
 
       // Center text
       ctx.textAlign = 'center';
-      ctx.fillStyle = '#f3f4f6';
+      ctx.fillStyle = isLight ? '#111827' : '#f3f4f6';
       ctx.font = `bold ${Math.round(r * 0.28)}px -apple-system, sans-serif`;
       ctx.fillText(total + '次', cx, cy + 4);
       ctx.font = `${Math.round(r * 0.15)}px -apple-system, sans-serif`;
-      ctx.fillStyle = '#9ca3af';
+      ctx.fillStyle = isLight ? '#6b7280' : '#9ca3af';
       ctx.fillText('总行程', cx, cy + r * 0.22);
     }, 50);
 
@@ -302,7 +303,8 @@ const Stats = {
       const yOf = km => PAD.t + chartH - (km / maxKm) * chartH;
 
       // Draw grid lines
-      ctx.strokeStyle = 'rgba(55,65,81,0.5)';
+      const isLightTheme = document.documentElement.classList.contains('light');
+      ctx.strokeStyle = isLightTheme ? 'rgba(209,213,219,0.6)' : 'rgba(55,65,81,0.5)';
       ctx.lineWidth = 0.5;
       for (let i = 0; i <= 4; i++) {
         const y = PAD.t + (i / 4) * chartH;
@@ -353,7 +355,7 @@ const Stats = {
         ctx.arc(x, y, 3, 0, Math.PI * 2);
         ctx.fillStyle = p.type === 'flight' ? '#f59e0b' : '#10b981';
         ctx.fill();
-        ctx.strokeStyle = '#1f2937';
+        ctx.strokeStyle = document.documentElement.classList.contains('light') ? '#e5e7eb' : '#1f2937';
         ctx.lineWidth = 1;
         ctx.stroke();
       });

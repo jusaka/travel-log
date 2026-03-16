@@ -24,18 +24,23 @@
       // Refresh content on tab switch
       if (tab.dataset.tab === 'map') {
         TravelMap.resize();
-      } else if (tab.dataset.tab === 'trips') {
-        Trips.render();
-      } else if (tab.dataset.tab === 'stats') {
-        Stats.render();
-      } else if (tab.dataset.tab === 'annual') {
-        Annual.render();
+        TravelMap._startAnimation(); // Resume animation
+      } else {
+        TravelMap.stopAnimation(); // Pause animation when map not visible
+        if (tab.dataset.tab === 'trips') {
+          Trips.render();
+        } else if (tab.dataset.tab === 'stats') {
+          Stats.render();
+        } else if (tab.dataset.tab === 'annual') {
+          Annual.render();
+        }
       }
     };
   });
 
   // Confirm modal buttons
   document.getElementById('confirmOk').onclick = () => {
+    closeModal('confirmModal');
     if (_confirmCb) _confirmCb();
     _confirmCb = null;
   };
@@ -230,7 +235,7 @@
         trip.distance = calcDistance(trip.fromLat, trip.fromLng, trip.toLat, trip.toLng);
         if (trip.type === 'train') trip.distance = Math.round(trip.distance * 1.3);
       }
-      trip.duration = calcTripDuration(trip.depTime, trip.arrTime);
+      trip.duration = calcTripDuration(trip.depTime, trip.arrTime, trip.fromCode, trip.toCode);
       Store.add(trip);
       added++;
     });
@@ -248,6 +253,7 @@
   document.getElementById('btnClearAll').onclick = () => {
     showConfirm('确定要清空所有行程数据？此操作不可恢复！', () => {
       localStorage.removeItem('travellog_trips');
+      Store.load(); // Refresh in-memory data
       closeModal('confirmModal');
       closeModal('settingsModal');
       showToast('已清空所有数据');
@@ -281,7 +287,7 @@
   document.addEventListener('keydown', e => {
     // Escape to close modal
     if (e.key === 'Escape') {
-      const openModal = document.querySelector('.modal');
+      const openModal = document.querySelector('.modal[style*="display: flex"], .modal[style*="display:flex"]');
       if (openModal) closeModal(openModal.id);
     }
     // N for new trip (when no modal open and not typing)
