@@ -291,12 +291,12 @@
       if (openModal) closeModal(openModal.id);
     }
     // N for new trip (when no modal open and not typing)
-    if (e.key === 'n' && !document.querySelector('.modal') && 
+    if (e.key === 'n' && !document.querySelector('.modal[style*="display: flex"], .modal[style*="display:flex"]') && 
         !['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName)) {
       Trips.openAdd();
     }
     // 1-4 for tab switching
-    if (!document.querySelector('.modal') && !['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName)) {
+    if (!document.querySelector('.modal[style*="display: flex"], .modal[style*="display:flex"]') && !['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName)) {
       const tabs = ['map', 'trips', 'stats', 'annual'];
       const num = parseInt(e.key);
       if (num >= 1 && num <= 4) {

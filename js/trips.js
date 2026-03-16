@@ -411,7 +411,7 @@ const Trips = {
   },
 
   showQuickActions(id, x, y) {
-    // Create a context menu
+    // Create or reuse context menu
     let menu = document.getElementById('quickActionsMenu');
     if (!menu) {
       menu = document.createElement('div');
@@ -431,49 +431,58 @@ const Trips = {
     menu.style.top = (y - 80) + 'px';
     menu.style.display = 'block';
     
-    // Handle clicks
-    menu.querySelectorAll('.quick-action-btn').forEach(btn => {
-      btn.onclick = () => {
-        menu.style.display = 'none';
-        const action = btn.dataset.action;
-        if (action === 'edit') {
-          this.openEdit(id);
-        } else if (action === 'duplicate') {
-          const original = Store.getById(id);
-          if (original) {
-            const copy = { ...original };
-            delete copy.id;
-            delete copy.createdAt;
-            copy.date = new Date().toISOString().split('T')[0];
-            Store.add(copy);
-            showToast('已复制行程');
-            this.render();
-            TravelMap.draw();
-            TravelMap.updateSummary();
-            Stats.render();
-            Annual.render();
-          }
-        } else if (action === 'delete') {
-          showConfirm('确定删除这条行程？', () => {
-            Store.delete(id);
-            closeModal('confirmModal');
-            showToast('已删除');
-            this.render();
-            TravelMap.draw();
-            TravelMap.updateSummary();
-            Stats.render();
-          });
+    // Handle clicks (use event delegation on the menu itself)
+    const handler = (e) => {
+      const btn = e.target.closest('.quick-action-btn');
+      if (!btn) return;
+      menu.style.display = 'none';
+      const action = btn.dataset.action;
+      if (action === 'edit') {
+        this.openEdit(id);
+      } else if (action === 'duplicate') {
+        const original = Store.getById(id);
+        if (original) {
+          const copy = { ...original };
+          delete copy.id;
+          delete copy.createdAt;
+          copy.date = new Date().toISOString().split('T')[0];
+          Store.add(copy);
+          showToast('已复制行程');
+          this.render();
+          TravelMap.draw();
+          TravelMap.updateSummary();
+          Stats.render();
+          Annual.render();
         }
-      };
-    });
+      } else if (action === 'delete') {
+        showConfirm('确定删除这条行程？', () => {
+          Store.delete(id);
+          closeModal('confirmModal');
+          showToast('已删除');
+          this.render();
+          TravelMap.draw();
+          TravelMap.updateSummary();
+          Stats.render();
+        });
+      }
+    };
+    // Remove previous listener, add new one
+    menu.removeEventListener('click', menu._handler);
+    menu._handler = handler;
+    menu.addEventListener('click', handler);
     
-    // Close on backdrop click
+    // Close on backdrop click (use single tracked listener)
+    if (menu._backdropHandler) {
+      document.removeEventListener('click', menu._backdropHandler);
+    }
     const closeMenu = (e) => {
       if (!menu.contains(e.target)) {
         menu.style.display = 'none';
         document.removeEventListener('click', closeMenu);
+        menu._backdropHandler = null;
       }
     };
+    menu._backdropHandler = closeMenu;
     setTimeout(() => document.addEventListener('click', closeMenu), 100);
   },
 

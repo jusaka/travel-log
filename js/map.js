@@ -370,10 +370,7 @@ const TravelMap = {
       if (freq >= 4 && dist > 40 && !this._freqBadgeDrawn?.has(undirKey)) {
         if (!this._freqBadgeDrawn) this._freqBadgeDrawn = new Set();
         this._freqBadgeDrawn.add(undirKey);
-        const badgeT = 0.5;
-        const bx = (1-badgeT)*(1-badgeT)*x1 + 2*(1-badgeT)*badgeT*cpx + badgeT*badgeT*y2;
-        const by = (1-badgeT)*(1-badgeT)*y1 + 2*(1-badgeT)*badgeT*cpy + badgeT*badgeT*y2;
-        // Place badge between the two arcs (at midpoint, no arc offset)
+        // Badge at midpoint between arcs
         ctx.save();
         ctx.beginPath();
         ctx.arc(mx, my, 8, 0, Math.PI*2);
