@@ -564,6 +564,8 @@ const Trips = {
         const monthTrips = trips.filter(tr => tr.date && tr.date.startsWith(ym));
         const monthKm = monthTrips.reduce((sum, tr) => sum + (tr.distance || 0), 0);
         const header = document.createElement('div');
+        header.className = 'trip-month-header';
+        header.dataset.month = parseInt(m) - 1;
         header.style.cssText = 'display:flex;justify-content:space-between;align-items:baseline;padding:12px 4px 6px;font-size:13px;font-weight:700;color:var(--accent2);border-bottom:1px solid var(--bg3);margin-bottom:4px';
         header.innerHTML = `<span>${y}年${parseInt(m)}月 <span style="font-weight:400;color:var(--text3);font-size:11px">${monthTrips.length}次</span></span><span style="font-size:11px;color:var(--text3);font-weight:400">${fmtDist(monthKm)}</span>`;
         list.appendChild(header);

@@ -114,6 +114,25 @@ const Annual = {
       </div>
     </div>`;
 
+    // Year-over-year comparison
+    const prevTrips = Store.getByYear(this.year - 1);
+    if (prevTrips.length > 0) {
+      const prevKm = prevTrips.reduce((s, t) => s + (t.distance || 0), 0);
+      const prevCities = new Set();
+      prevTrips.forEach(t => { if (t.fromCity) prevCities.add(t.fromCity); if (t.toCity) prevCities.add(t.toCity); });
+      const diffTrips = trips.length - prevTrips.length;
+      const diffKm = totalKm - prevKm;
+      const diffCities = cities.size - prevCities.size;
+      const arrow = v => v > 0 ? `<span style="color:#34d399">↑${v}</span>` : v < 0 ? `<span style="color:#ef4444">↓${Math.abs(v)}</span>` : `<span style="color:var(--text3)">—</span>`;
+      html += `<div class="annual-section">
+        <h3>📈 同比 ${this.year - 1} 年</h3>
+        <div class="stat-card" style="margin:0">
+          <div class="stat-row"><span class="stat-label">出行次数</span><span class="stat-value">${prevTrips.length} → ${trips.length} ${arrow(diffTrips)}</span></div>
+          <div class="stat-row"><span class="stat-label">总里程</span><span class="stat-value">${fmtDist(prevKm)} → ${fmtDist(totalKm)} ${arrow(diffKm > 0 ? 1 : diffKm < 0 ? -1 : 0)}</span></div>
+          <div class="stat-row"><span class="stat-label">到访城市</span><span class="stat-value">${prevCities.size} → ${cities.size} ${arrow(diffCities)}</span></div>
+        </div>
+      </div>`;
+    }
     // Contribution Heatmap (GitHub-style)
     html += this._renderHeatmap(dateCounts);
 
@@ -157,7 +176,7 @@ const Annual = {
         ${monthlyCounts.map((c, i) => {
           const h = c > 0 ? Math.max(12, (c / maxMonthCount) * 85) : 4;
           const color = c > 0 ? 'var(--accent)' : 'var(--bg3)';
-          return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px">
+          return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:${c > 0 ? 'pointer' : 'default'}" ${c > 0 ? `onclick="document.querySelector('[data-tab=trips]').click();document.getElementById('tripSearch').value='';document.getElementById('filterYear').value='${this.year}';document.getElementById('filterType').value='all';Trips.render();setTimeout(()=>{const h=document.querySelectorAll('.trip-month-header');for(const el of h){if(el.dataset.month==='${i}'){el.scrollIntoView({behavior:'smooth',block:'start'});break;}}},100)"` : ''}>
             ${c > 0 ? `<div style="font-size:10px;color:var(--text2);font-weight:600">${c}</div>` : '<div style="font-size:10px;color:transparent">0</div>'}
             <div style="width:100%;height:${h}px;background:${color};border-radius:3px 3px 0 0;transition:height .5s"></div>
             <div style="font-size:9px;color:var(--text3)">${monthNames[i]}</div>
@@ -214,6 +233,21 @@ const Annual = {
         <div class="stat-row"><span class="stat-label">📈 活跃月均</span><span class="stat-value">${avgTripsPerMonth} 次/月</span></div>
       </div>
     </div>`;
+
+    // Achievements
+    const achievements = this._getAchievements(trips, flights, trains, totalKm, cities, airports);
+    if (achievements.length > 0) {
+      html += `<div class="annual-section">
+        <h3>🏅 成就解锁</h3>
+        <div style="display:flex;flex-wrap:wrap;gap:8px">
+          ${achievements.map(a => `<div style="background:${a.unlocked ? 'linear-gradient(135deg,rgba(251,191,36,0.15),rgba(245,158,11,0.08))' : 'var(--bg2)'};border:1px solid ${a.unlocked ? 'rgba(251,191,36,0.4)' : 'var(--bg3)'};border-radius:12px;padding:10px 14px;text-align:center;min-width:90px;flex:1;opacity:${a.unlocked ? '1' : '0.4'}">
+            <div style="font-size:24px;margin-bottom:4px">${a.icon}</div>
+            <div style="font-size:11px;font-weight:600;color:${a.unlocked ? 'var(--flight)' : 'var(--text3)'}">${a.name}</div>
+            <div style="font-size:9px;color:var(--text3);margin-top:2px">${a.desc}</div>
+          </div>`).join('')}
+        </div>
+      </div>`;
+    }
 
     // Fun footer + share
     html += `<div style="text-align:center;padding:16px 0 80px">
@@ -273,7 +307,7 @@ const Annual = {
     const dpr = 2;
     const W = 375;
     // Dynamic height based on content
-    const baseH = 950;
+    const baseH = 1060;
     const routeH = topRoutes.length * 28;
     const H = baseH + routeH;
     
@@ -418,8 +452,63 @@ const Annual = {
       ctx.fillText(m, bx + bw/2, curY + barAreaH - 2);
     });
 
-    // ===== TOP CITIES =====
+    // ===== HEATMAP =====
     curY += barAreaH + 14;
+    drawDivider(curY);
+    curY += 22;
+    ctx.fillStyle = '#e5e7eb';
+    ctx.font = 'bold 14px -apple-system, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText('📆 出行热力图', 28, curY);
+    curY += 12;
+    {
+      // Build date counts for heatmap
+      const dateCounts = {};
+      trips.forEach(t => { dateCounts[t.date] = (dateCounts[t.date] || 0) + 1; });
+      const startDate = new Date(this.year, 0, 1);
+      const startDay = startDate.getDay();
+      const cellSize = 5;
+      const cellGap = 1.5;
+      const cols = 53, rows = 7;
+      const heatW = cols * (cellSize + cellGap);
+      const heatX = (W - heatW) / 2;
+      const current = new Date(startDate);
+      current.setDate(current.getDate() - startDay);
+      for (let i = 0; i < cols * rows; i++) {
+        const dateStr = current.toISOString().split('T')[0];
+        const isInYear = current.getFullYear() === this.year;
+        const count = isInYear ? (dateCounts[dateStr] || 0) : -1;
+        const col = Math.floor(i / 7);
+        const row = i % 7;
+        const cx = heatX + col * (cellSize + cellGap);
+        const cy = curY + row * (cellSize + cellGap);
+        if (count < 0) {
+          // skip
+        } else if (count === 0) {
+          ctx.fillStyle = 'rgba(55,65,81,0.3)';
+          ctx.fillRect(cx, cy, cellSize, cellSize);
+        } else {
+          const alpha = Math.min(0.3 + count * 0.25, 1.0);
+          ctx.fillStyle = `rgba(96,165,250,${alpha})`;
+          ctx.fillRect(cx, cy, cellSize, cellSize);
+        }
+        current.setDate(current.getDate() + 1);
+      }
+      curY += rows * (cellSize + cellGap) + 4;
+      // Month labels below heatmap
+      const heatMonths = ['1','2','3','4','5','6','7','8','9','10','11','12'];
+      ctx.font = '7px -apple-system, sans-serif';
+      ctx.fillStyle = '#4b5563';
+      ctx.textAlign = 'center';
+      heatMonths.forEach((m, i) => {
+        const x = heatX + (i / 12) * heatW + heatW / 24;
+        ctx.fillText(m + '月', x, curY);
+      });
+      curY += 6;
+    }
+
+    // ===== TOP CITIES =====
+    curY += 8;
     drawDivider(curY);
     curY += 22;
     ctx.fillStyle = '#e5e7eb';
@@ -536,6 +625,38 @@ const Annual = {
       URL.revokeObjectURL(url);
       showToast('分享图片已生成 📸');
     }, 'image/png');
+  },
+
+  _getAchievements(trips, flights, trains, totalKm, cities, airports) {
+    const allTrips = Store.getAll(); // all-time for some achievements
+    const allFlights = allTrips.filter(t => t.type === 'flight');
+    const allCities = new Set();
+    allTrips.forEach(t => { if (t.fromCity) allCities.add(t.fromCity); if (t.toCity) allCities.add(t.toCity); });
+    
+    // International flights (non-China airports)
+    const intlCodes = new Set(['SIN','BKK','NRT','KIX','ICN','HKG','MFM','TPE','KUL','MNL','HND','CDG','LHR','JFK','LAX','SFO','SYD','DXB']);
+    const hasIntl = flights.some(f => intlCodes.has(f.fromCode) || intlCodes.has(f.toCode));
+    const allHasIntl = allFlights.some(f => intlCodes.has(f.fromCode) || intlCodes.has(f.toCode));
+    
+    // Unique airlines in year
+    const yearAirlines = new Set(flights.map(f => f.airline).filter(Boolean));
+    const allAirlines = new Set(allFlights.map(f => f.airline).filter(Boolean));
+    // Big 3 China airlines
+    const big3 = ['CA', 'MU', 'CZ'];
+    const hasBig3 = big3.every(c => allAirlines.has(c));
+
+    return [
+      { icon: '🌍', name: '首次起飞', desc: '完成首次飞行', unlocked: allFlights.length >= 1 },
+      { icon: '✈️', name: '飞行达人', desc: '年飞10次以上', unlocked: flights.length >= 10 },
+      { icon: '🚄', name: '高铁先锋', desc: '年坐5次高铁', unlocked: trains.length >= 5 },
+      { icon: '🌏', name: '国际旅行家', desc: '有国际航班', unlocked: allHasIntl },
+      { icon: '🏙️', name: '城市探索者', desc: '到访10个城市', unlocked: allCities.size >= 10 },
+      { icon: '📏', name: '万里长征', desc: '年飞行1万km', unlocked: totalKm >= 10000 },
+      { icon: '🔥', name: '停不下来', desc: '年出行20次', unlocked: trips.length >= 20 },
+      { icon: '🛫', name: '三大航集齐', desc: '坐过国航东航南航', unlocked: hasBig3 },
+      { icon: '💼', name: '商务精英', desc: '坐过商务舱', unlocked: allFlights.some(f => f.seatClass === 'business' || f.seatClass === 'first') },
+      { icon: '🌍', name: '环球旅行', desc: '累计4万km', unlocked: allTrips.reduce((s,t) => s + (t.distance||0), 0) >= 40000 },
+    ];
   },
 
   _renderHeatmap(dateCounts) {

@@ -156,14 +156,21 @@
     const reader = new FileReader();
     reader.onload = (ev) => {
       try {
-        const added = Store.importData(ev.target.result);
-        showToast(`导入成功，新增 ${added} 条行程`);
-        Trips.render();
-        TravelMap.draw();
-        TravelMap.updateSummary();
-        Stats.render();
-        Annual.render();
-        closeModal('settingsModal');
+        // Preview: count how many will be imported
+        const raw = ev.target.result;
+        const isCSV = raw.trim().startsWith('date,') || /^\d{4}-\d{2}-\d{2}/.test(raw.trim().split('\n')[0]);
+        const lines = raw.trim().split('\n').length;
+        const approxCount = isCSV ? lines - 1 : 'N/A';
+        showConfirm(`确定导入 ${file.name}？\n预计 ${approxCount} 条记录（已有的不会重复）`, () => {
+          const added = Store.importData(raw);
+          showToast(`导入成功，新增 ${added} 条行程`);
+          Trips.render();
+          TravelMap.draw();
+          TravelMap.updateSummary();
+          Stats.render();
+          Annual.render();
+          closeModal('settingsModal');
+        });
       } catch(err) {
         showToast('导入失败：' + err.message);
       }
