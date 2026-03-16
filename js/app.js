@@ -324,6 +324,54 @@
     Annual.render();
   };
 
+  // Smart paste / AI import
+  document.getElementById('btnSmartPaste').onclick = () => {
+    closeModal('settingsModal');
+    document.getElementById('smartPasteInput').value = '';
+    document.getElementById('smartPastePreview').style.display = 'none';
+    openModal('smartPasteModal');
+  };
+  document.getElementById('btnCopyPrompt').onclick = async () => {
+    const text = document.getElementById('aiPromptText').textContent;
+    try {
+      await navigator.clipboard.writeText(text);
+      showToast('提示词已复制 ✅');
+    } catch(e) {
+      const ta = document.createElement('textarea');
+      ta.value = text; ta.style.cssText = 'position:fixed;opacity:0';
+      document.body.appendChild(ta); ta.select(); document.execCommand('copy');
+      document.body.removeChild(ta);
+      showToast('提示词已复制 ✅');
+    }
+  };
+  // Preview on input
+  document.getElementById('smartPasteInput').addEventListener('input', () => {
+    const raw = document.getElementById('smartPasteInput').value.trim();
+    const preview = document.getElementById('smartPastePreview');
+    if (!raw) { preview.style.display = 'none'; return; }
+    const lines = raw.split('\n').filter(l => l.trim());
+    const hasHeader = lines[0]?.startsWith('date,') || lines[0]?.includes('type');
+    const dataCount = hasHeader ? lines.length - 1 : lines.length;
+    preview.style.display = '';
+    preview.innerHTML = `<div style="font-size:12px;color:var(--accent);padding:8px;background:var(--bg3);border-radius:6px">预览：检测到 <b>${dataCount}</b> 条行程记录</div>`;
+  });
+  document.getElementById('btnSmartImport').onclick = () => {
+    const raw = document.getElementById('smartPasteInput').value.trim();
+    if (!raw) { showToast('请粘贴数据'); return; }
+    try {
+      const added = Store.importData(raw);
+      closeModal('smartPasteModal');
+      showToast(`导入成功，新增 ${added} 条行程 🎉`);
+      Trips.render();
+      TravelMap.draw();
+      TravelMap.updateSummary();
+      Stats.render();
+      Annual.render();
+    } catch(e) {
+      showToast('导入失败：' + e.message);
+    }
+  };
+
   // Clear all data
   document.getElementById('btnClearAll').onclick = () => {
     showConfirm('确定要清空所有行程数据？此操作不可恢复！', () => {

@@ -328,6 +328,7 @@
         <h4>数据管理</h4>
         <button class="btn btn-full" id="btnCopyData">📤 备份数据（复制到剪贴板）</button>
         <button class="btn btn-full" id="btnPasteData">📥 恢复数据（从剪贴板导入）</button>
+        <button class="btn btn-full" id="btnSmartPaste">🤖 AI智能导入（粘贴文本）</button>
         <details style="margin-top:8px">
           <summary style="font-size:12px;color:var(--text3);cursor:pointer;padding:6px 0">📁 文件导入导出...</summary>
           <div style="display:flex;flex-direction:column;gap:6px;margin-top:6px">
@@ -350,7 +351,7 @@
       </div>
       <div class="settings-section">
         <h4>关于</h4>
-        <p class="about-text">旅途纵横 v6.4<br>记录每一次出发，珍藏每一段旅程<br><span style="color:var(--text3);font-size:11px;margin-top:4px;display:block">Made with ❤️ by 和珅</span></p>
+        <p class="about-text">旅途纵横 v6.5<br>记录每一次出发，珍藏每一段旅程<br><span style="color:var(--text3);font-size:11px;margin-top:4px;display:block">Made with ❤️ by 和珅</span></p>
       </div>
     </div>
   </div>
@@ -381,6 +382,61 @@
     <div class="modal-footer" style="justify-content:center">
       <button class="btn btn-secondary" id="confirmCancel">取消</button>
       <button class="btn btn-danger" id="confirmOk">确定</button>
+    </div>
+  </div>
+</div>
+
+<!-- Smart Paste Modal -->
+<div id="smartPasteModal" class="modal" style="display:none">
+  <div class="modal-content modal-large">
+    <div class="modal-header">
+      <h3>🤖 AI智能导入</h3>
+      <button class="modal-close" onclick="closeModal('smartPasteModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div style="background:var(--bg3);border-radius:8px;padding:12px;margin-bottom:12px">
+        <div style="font-size:13px;font-weight:600;margin-bottom:8px">使用方法</div>
+        <div style="font-size:12px;color:var(--text2);line-height:1.6">
+          1️⃣ 把登机牌截图/机票邮件/行程单发给任何AI<br>
+          2️⃣ 附上下方提示词<br>
+          3️⃣ 把AI返回的CSV粘贴到下面的输入框
+        </div>
+      </div>
+      <div style="position:relative;margin-bottom:12px">
+        <pre id="aiPromptText" style="background:var(--bg);border:1px solid var(--bg3);border-radius:8px;padding:12px;font-size:11px;line-height:1.5;color:var(--text2);overflow-x:auto;white-space:pre-wrap;max-height:120px;overflow-y:auto">请将以下行程信息转换为CSV格式，每行一条行程，格式如下：
+date,type,fromCode,toCode,fromStation,toStation,flightNo,trainNo,airline,depTime,arrTime,seatClass,seatType,seat,price
+
+字段说明：
+- date: 日期 YYYY-MM-DD
+- type: flight 或 train
+- fromCode/toCode: 机场IATA代码（如PEK/SHA/CAN），高铁留空
+- fromStation/toStation: 高铁站名（如上海虹桥/杭州东），飞机留空
+- flightNo: 航班号（如CA1234），高铁留空
+- trainNo: 车次（如G1234），飞机留空
+- airline: 航司二字码（CA=国航,MU=东航,CZ=南航,HO=吉祥,3U=川航）
+- depTime/arrTime: 出发/到达时间 HH:MM
+- seatClass: economy/business/first（飞机）
+- seatType: second/first/business（高铁）
+- seat: 座位号
+- price: 票价（数字）
+
+示例输出：
+date,type,fromCode,toCode,fromStation,toStation,flightNo,trainNo,airline,depTime,arrTime,seatClass,seatType,seat,price
+2025-06-15,flight,SHA,PEK,,,,CA1234,CA,08:00,10:15,economy,,,580
+2025-06-20,train,,,,上海虹桥,杭州东,,G7501,,09:00,10:05,,second,5车12A,73
+
+只输出CSV，不要其他解释。</pre>
+        <button class="btn btn-secondary" id="btnCopyPrompt" style="position:absolute;top:8px;right:8px;padding:4px 10px;font-size:11px">复制</button>
+      </div>
+      <div class="form-group">
+        <label>粘贴AI返回的CSV数据</label>
+        <textarea id="smartPasteInput" placeholder="粘贴CSV数据到这里..." rows="6" style="font-family:monospace;font-size:12px"></textarea>
+      </div>
+      <div id="smartPastePreview" style="display:none;margin-top:8px"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('smartPasteModal')">取消</button>
+      <button class="btn btn-primary" id="btnSmartImport">导入</button>
     </div>
   </div>
 </div>
