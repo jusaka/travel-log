@@ -75,7 +75,7 @@
   document.getElementById('btnCopyData').onclick = async () => {
     const trips = Store.getAll();
     if (!trips.length) { showToast('没有数据'); return; }
-    const data = JSON.stringify(trips, null, 2);
+    const data = Store.exportData();
     try {
       await navigator.clipboard.writeText(data);
       showToast(`已复制 ${trips.length} 条行程到剪贴板 ✅`);

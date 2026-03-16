@@ -180,17 +180,52 @@ const Store = {
   _importJSON(json) {
     try {
       const data = typeof json === 'string' ? JSON.parse(json) : json;
-      if (data.app !== 'travellog' || !Array.isArray(data.trips)) {
+      // Support both { app:'travellog', trips:[...] } and plain array [...]
+      let trips;
+      if (Array.isArray(data)) {
+        trips = data;
+      } else if (data.app === 'travellog' && Array.isArray(data.trips)) {
+        trips = data.trips;
+      } else if (Array.isArray(data.trips)) {
+        trips = data.trips;
+      } else {
         throw new Error('Invalid format');
       }
-      // Merge: skip duplicates by id
+      // Merge: skip duplicates by date+flightNo/trainNo, or by id
       const existingIds = new Set(this._trips.map(t => t.id));
+      const existingKeys = new Set(this._trips.map(t => (t.date||'') + (t.flightNo||t.trainNo||'')));
       let added = 0;
-      data.trips.forEach(t => {
-        if (!existingIds.has(t.id)) {
-          this._trips.push(t);
-          added++;
+      trips.forEach(t => {
+        const key = (t.date||'') + (t.flightNo||t.trainNo||'');
+        if (existingIds.has(t.id) || existingKeys.has(key)) return;
+        // Generate new id if missing
+        if (!t.id) t.id = Date.now().toString(36) + Math.random().toString(36).slice(2,6) + added;
+        // Enrich from airport/station DB
+        if (t.type === 'flight' || (!t.type && t.flightNo)) {
+          t.type = t.type || 'flight';
+          if (t.fromCode && AIRPORTS[t.fromCode]) {
+            const ap = AIRPORTS[t.fromCode];
+            t.fromLat = t.fromLat || ap.lat; t.fromLng = t.fromLng || ap.lng; t.fromCity = t.fromCity || ap.city;
+          }
+          if (t.toCode && AIRPORTS[t.toCode]) {
+            const ap = AIRPORTS[t.toCode];
+            t.toLat = t.toLat || ap.lat; t.toLng = t.toLng || ap.lng; t.toCity = t.toCity || ap.city;
+          }
         }
+        if (!t.distance && t.fromLat && t.toLat) {
+          t.distance = calcDistance(t.fromLat, t.fromLng, t.toLat, t.toLng);
+          if (t.type === 'train') t.distance = Math.round(t.distance * 1.3);
+        }
+        if (!t.airline && t.flightNo) t.airline = detectAirline(t.flightNo);
+        if (t.depTime && t.arrTime && !t.duration) {
+          const [dh,dm] = t.depTime.split(':').map(Number);
+          const [ah,am] = t.arrTime.split(':').map(Number);
+          let mins = (ah*60+am) - (dh*60+dm);
+          if (mins < 0) mins += 24*60;
+          t.duration = mins;
+        }
+        this._trips.push(t);
+        added++;
       });
       this._trips.sort((a, b) => b.date.localeCompare(a.date));
       this.save();
