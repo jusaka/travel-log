@@ -71,7 +71,47 @@
   }
   updateThemeButtons();
 
-  // Export
+  // Copy to clipboard
+  document.getElementById('btnCopyData').onclick = async () => {
+    const trips = Store.getAll();
+    if (!trips.length) { showToast('没有数据'); return; }
+    const data = JSON.stringify(trips, null, 2);
+    try {
+      await navigator.clipboard.writeText(data);
+      showToast(`已复制 ${trips.length} 条行程到剪贴板 ✅`);
+    } catch(e) {
+      const ta = document.createElement('textarea');
+      ta.value = data; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select(); document.execCommand('copy');
+      document.body.removeChild(ta);
+      showToast(`已复制 ${trips.length} 条行程到剪贴板 ✅`);
+    }
+  };
+
+  // Paste from clipboard
+  document.getElementById('btnPasteData').onclick = async () => {
+    try {
+      let text;
+      try {
+        text = await navigator.clipboard.readText();
+      } catch(e) {
+        text = prompt('粘贴数据到这里（JSON格式）：');
+      }
+      if (!text || !text.trim()) { showToast('剪贴板为空'); return; }
+      const added = Store.importData(text.trim());
+      showToast(`导入成功，新增 ${added} 条行程 ✅`);
+      Trips.render();
+      TravelMap.draw();
+      TravelMap.updateSummary();
+      Stats.render();
+      Annual.render();
+      closeModal('settingsModal');
+    } catch(err) {
+      showToast('导入失败：' + err.message);
+    }
+  };
+
+  // Export JSON
   document.getElementById('btnExport').onclick = () => {
     const data = Store.exportData();
     const blob = new Blob([data], { type: 'application/json' });
