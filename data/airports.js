@@ -250,4 +250,7 @@ const AIRLINES = {
   MM: { name: '乐桃航空', color: '#F91E85' },
   '7C': { name: '济州航空', color: '#FF6600' },
   TW: { name: '德威航空', color: '#E60012' },
+  BK: { name: '奥凯航空', color: '#003087' },
+  TV: { name: '西藏航空', color: '#C8102E' },
+  '9H': { name: '长安航空', color: '#8B0000' },
 };
