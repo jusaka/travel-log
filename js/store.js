@@ -1,9 +1,11 @@
 // ===== Data Store (localStorage) =====
 
 const STORE_KEY = 'travellog_trips';
+const GROUPS_KEY = 'travellog_groups';
 
 const Store = {
   _trips: [],
+  _groups: [],
 
   load() {
     try {
@@ -11,6 +13,12 @@ const Store = {
       this._trips = raw ? JSON.parse(raw) : [];
     } catch(e) {
       this._trips = [];
+    }
+    try {
+      const raw = localStorage.getItem(GROUPS_KEY);
+      this._groups = raw ? JSON.parse(raw) : [];
+    } catch(e) {
+      this._groups = [];
     }
     // Sort by date desc
     this._trips.sort((a, b) => b.date.localeCompare(a.date));
@@ -20,6 +28,7 @@ const Store = {
     const data = JSON.stringify(this._trips);
     try {
       localStorage.setItem(STORE_KEY, data);
+      localStorage.setItem(GROUPS_KEY, JSON.stringify(this._groups));
     } catch(e) {
       showToast('⚠️ 存储空间不足，请导出备份数据！');
       return;
@@ -55,7 +64,50 @@ const Store = {
 
   delete(id) {
     this._trips = this._trips.filter(t => t.id !== id);
+    // Also remove from any groups
+    this._groups.forEach(g => { g.tripIds = g.tripIds.filter(tid => tid !== id); });
     this.save();
+  },
+
+  // ===== Trip Groups =====
+  getGroups() { return this._groups; },
+
+  getGroupById(id) { return this._groups.find(g => g.id === id); },
+
+  addGroup(name, tripIds = []) {
+    const group = { id: genId(), name, tripIds, createdAt: new Date().toISOString() };
+    this._groups.push(group);
+    // Set groupId on trips
+    tripIds.forEach(tid => {
+      const t = this.getById(tid);
+      if (t) t.groupId = group.id;
+    });
+    this.save();
+    return group;
+  },
+
+  updateGroup(id, data) {
+    const g = this._groups.find(g => g.id === id);
+    if (g) {
+      Object.assign(g, data);
+      // Update trip groupId references
+      this._trips.forEach(t => { if (t.groupId === id && !g.tripIds.includes(t.id)) delete t.groupId; });
+      g.tripIds.forEach(tid => {
+        const t = this.getById(tid);
+        if (t) t.groupId = id;
+      });
+      this.save();
+    }
+  },
+
+  deleteGroup(id) {
+    this._groups = this._groups.filter(g => g.id !== id);
+    this._trips.forEach(t => { if (t.groupId === id) delete t.groupId; });
+    this.save();
+  },
+
+  getGroupForTrip(tripId) {
+    return this._groups.find(g => g.tripIds.includes(tripId));
   },
 
   // Get unique years
@@ -186,10 +238,11 @@ const Store = {
   // Export
   exportData() {
     return JSON.stringify({
-      version: 1,
+      version: 2,
       app: 'travellog',
       exported: new Date().toISOString(),
       trips: this._trips,
+      groups: this._groups,
     }, null, 2);
   },
 

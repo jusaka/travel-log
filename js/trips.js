@@ -41,6 +41,15 @@ const Trips = {
     document.getElementById('btnSaveTrip').onclick = () => this.saveTrip();
     document.getElementById('btnDeleteTrip').onclick = () => this.deleteTrip();
     document.getElementById('btnDuplicateTrip').onclick = () => this.duplicateTrip();
+    
+    // New group button
+    document.getElementById('btnNewGroup').onclick = () => {
+      const name = prompt('旅行名称（如"2025春节回家"）：');
+      if (!name || !name.trim()) return;
+      const group = Store.addGroup(name.trim());
+      this._refreshGroupSelect();
+      document.getElementById('tripGroupSelect').value = group.id;
+    };
 
     // Filters
     document.getElementById('filterType').onchange = () => this.render();
@@ -122,6 +131,7 @@ const Trips = {
     const lastDate = localStorage.getItem('travellog_lastDate') || new Date().toISOString().split('T')[0];
     document.getElementById('fDate').value = lastDate;
     document.getElementById('tDate').value = lastDate;
+    this._refreshGroupSelect();
     openModal('addTripModal');
   },
 
@@ -188,6 +198,7 @@ const Trips = {
       document.getElementById('tPrice').value = trip.price || '';
     }
 
+    this._refreshGroupSelect(trip.groupId);
     openModal('addTripModal');
   },
 
@@ -268,12 +279,32 @@ const Trips = {
       trip.duration = calcTripDuration(trip.depTime, trip.arrTime);
     }
 
+    // Group assignment
+    const groupId = document.getElementById('tripGroupSelect').value;
+    if (groupId) {
+      trip.groupId = groupId;
+      const group = Store.getGroupById(groupId);
+      if (group && this.editingId) {
+        if (!group.tripIds.includes(this.editingId)) group.tripIds.push(this.editingId);
+      }
+    } else {
+      delete trip.groupId;
+    }
+
     if (this.editingId) {
       Store.update(this.editingId, trip);
       showToast('行程已更新');
       closeModal('addTripModal');
     } else {
-      Store.add(trip);
+      const newTrip = Store.add(trip);
+      // Add to group if selected
+      if (groupId) {
+        const group = Store.getGroupById(groupId);
+        if (group && !group.tripIds.includes(newTrip.id)) {
+          group.tripIds.push(newTrip.id);
+          Store.save();
+        }
+      }
       localStorage.setItem('travellog_lastDate', trip.date);
       closeModal('addTripModal');
       // Offer return trip
@@ -336,6 +367,18 @@ const Trips = {
       this._prefillForm(returnTrip);
       openModal('addTripModal');
     };
+  },
+
+  _refreshGroupSelect(selectedId) {
+    const sel = document.getElementById('tripGroupSelect');
+    sel.innerHTML = '<option value="">不归组</option>';
+    Store.getGroups().forEach(g => {
+      const opt = document.createElement('option');
+      opt.value = g.id;
+      opt.textContent = g.name;
+      sel.appendChild(opt);
+    });
+    if (selectedId) sel.value = selectedId;
   },
 
   _prefillForm(trip) {
@@ -579,13 +622,15 @@ const Trips = {
       const fromLabel = isF ? (t.fromCode || t.fromCity || '?') : (t.fromStation || t.fromCity || '?');
       const toLabel = isF ? (t.toCode || t.toCity || '?') : (t.toStation || t.toCity || '?');
       const airline = isF && t.airline ? (AIRLINES[t.airline]?.name || t.airline) : '';
+      const group = t.groupId ? Store.getGroupById(t.groupId) : null;
+      const groupBadge = group ? `<span style="font-size:10px;background:rgba(59,130,246,0.15);color:var(--accent);padding:1px 6px;border-radius:8px;margin-left:6px">🏷️ ${escHtml(group.name)}</span>` : '';
 
       const card = document.createElement('div');
       card.className = `trip-card ${isF ? 'flight-card' : 'train-card'}`;
       card.dataset.id = t.id;
       card.innerHTML = `
         <div class="trip-card-header">
-          <span class="trip-date">${fmtDate(t.date)}</span>
+          <span class="trip-date">${fmtDate(t.date)}${groupBadge}</span>
           ${typeBadge}
         </div>
         <div class="trip-route" style="margin:10px 0">
@@ -700,6 +745,8 @@ const Trips = {
     }
     if (t.note) rows.push(['备注', escHtml(t.note)]);
     if (t.price) rows.push(['票价', '¥' + t.price.toLocaleString()]);
+    const detailGroup = t.groupId ? Store.getGroupById(t.groupId) : null;
+    if (detailGroup) rows.push(['旅行', escHtml(detailGroup.name)]);
     
     if (rows.length > 0) {
       html += `<div style="margin-bottom:16px">

@@ -141,6 +141,19 @@
         <button class="type-btn" data-type="train">🚄 高铁</button>
       </div>
 
+      <!-- Trip Group Selector -->
+      <div class="form-row" style="margin-bottom:12px">
+        <div class="form-group">
+          <label>归属旅行</label>
+          <div style="display:flex;gap:6px">
+            <select id="tripGroupSelect" style="flex:1">
+              <option value="">不归组</option>
+            </select>
+            <button type="button" class="btn btn-secondary" id="btnNewGroup" style="padding:8px 12px;font-size:12px;white-space:nowrap">+ 新建</button>
+          </div>
+        </div>
+      </div>
+
       <!-- Flight Form -->
       <div id="flightForm" class="trip-form">
         <div class="form-row">
