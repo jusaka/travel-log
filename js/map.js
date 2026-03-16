@@ -147,7 +147,8 @@ const TravelMap = {
 
     document.getElementById('btnZoomIn').onclick = () => this.zoom(1.4, this.W / 2, this.H / 2);
     document.getElementById('btnZoomOut').onclick = () => this.zoom(0.7, this.W / 2, this.H / 2);
-    document.getElementById('btnResetView').onclick = () => this.resetView();
+    document.getElementById('btnResetView').onclick = () => { this._stopPlayback(); this.resetView(); };
+    document.getElementById('btnPlayback').onclick = () => this._togglePlayback();
   },
 
   onPointerDown(x, y) {
@@ -695,6 +696,249 @@ const TravelMap = {
       clearTimeout(this._tooltipTimer);
       this._tooltipTimer = setTimeout(() => { tooltip.style.display = 'none'; tooltip.style.pointerEvents = 'none'; }, 5000);
     }
+  },
+
+  // ===== Playback System =====
+  _playback: null,
+
+  _togglePlayback() {
+    if (this._playback) {
+      this._stopPlayback();
+    } else {
+      this._startPlayback();
+    }
+  },
+
+  _startPlayback() {
+    const trips = [...Store.getAll()].filter(t => t.fromLat && t.toLat).sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+    if (trips.length === 0) { showToast('暂无行程数据'); return; }
+
+    const btn = document.getElementById('btnPlayback');
+    btn.textContent = '⏹️';
+
+    // Stop normal animation
+    this.stopAnimation();
+
+    this._playback = {
+      trips,
+      currentIndex: 0,
+      revealedRoutes: [],
+      revealedCities: new Set(),
+      routeProgress: 0, // 0..1 for current route drawing animation
+      startTime: Date.now(),
+      frame: null,
+    };
+
+    // Show date overlay
+    let dateOverlay = document.getElementById('playbackDate');
+    if (!dateOverlay) {
+      dateOverlay = document.createElement('div');
+      dateOverlay.id = 'playbackDate';
+      dateOverlay.style.cssText = 'position:absolute;top:60px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.7);color:#fbbf24;padding:6px 16px;border-radius:20px;font-size:14px;font-weight:700;z-index:50;pointer-events:none;transition:opacity .3s';
+      this.canvas.parentElement.appendChild(dateOverlay);
+    }
+    dateOverlay.style.opacity = '1';
+
+    const animate = () => {
+      if (!this._playback) return;
+      const pb = this._playback;
+
+      if (pb.currentIndex >= pb.trips.length) {
+        // Playback complete
+        setTimeout(() => this._stopPlayback(), 2000);
+        this._drawPlayback();
+        return;
+      }
+
+      // Advance route progress
+      pb.routeProgress += 0.025; // ~40 frames per route = ~0.7s at 60fps
+      if (pb.routeProgress >= 1.0) {
+        // Route complete, add to revealed
+        const t = pb.trips[pb.currentIndex];
+        pb.revealedRoutes.push(t);
+        if (t.fromCity) pb.revealedCities.add(t.fromCity);
+        if (t.toCity) pb.revealedCities.add(t.toCity);
+        pb.currentIndex++;
+        pb.routeProgress = 0;
+      }
+
+      // Update date display
+      if (pb.currentIndex < pb.trips.length) {
+        dateOverlay.textContent = pb.trips[pb.currentIndex].date || '';
+      } else {
+        dateOverlay.textContent = `🎉 ${pb.revealedRoutes.length} 条行程回放完毕`;
+      }
+
+      this._drawPlayback();
+      pb.frame = requestAnimationFrame(animate);
+    };
+    this._playback.frame = requestAnimationFrame(animate);
+  },
+
+  _stopPlayback() {
+    if (this._playback) {
+      if (this._playback.frame) cancelAnimationFrame(this._playback.frame);
+      this._playback = null;
+    }
+    const btn = document.getElementById('btnPlayback');
+    if (btn) btn.textContent = '▶️';
+    const dateOverlay = document.getElementById('playbackDate');
+    if (dateOverlay) dateOverlay.style.opacity = '0';
+    // Resume normal drawing
+    this.draw();
+  },
+
+  _drawPlayback() {
+    const pb = this._playback;
+    if (!pb) return;
+    const ctx = this.ctx;
+    const W = this.W, H = this.H;
+    const isLight = document.documentElement.classList.contains('light');
+
+    ctx.clearRect(0, 0, W, H);
+
+    // Background
+    const bgGrad = ctx.createRadialGradient(W / 2, H / 2, 0, W / 2, H / 2, Math.max(W, H));
+    if (isLight) { bgGrad.addColorStop(0, '#f9fafb'); bgGrad.addColorStop(1, '#e5e7eb'); }
+    else { bgGrad.addColorStop(0, '#0d1b2e'); bgGrad.addColorStop(1, '#070d18'); }
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(0, 0, W, H);
+    this._drawGeo(ctx);
+
+    // Draw revealed routes (completed)
+    pb.revealedRoutes.forEach(t => {
+      const [x1, y1] = this.project(t.fromLat, t.fromLng);
+      const [x2, y2] = this.project(t.toLat, t.toLng);
+      const isF = t.type === 'flight';
+
+      if (isF) {
+        const mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
+        const dist = Math.hypot(x2 - x1, y2 - y1);
+        const arcH = dist * 0.18;
+        const angle = Math.atan2(y2 - y1, x2 - x1);
+        const cpx = mx - arcH * Math.sin(angle);
+        const cpy = my + arcH * Math.cos(angle);
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.quadraticCurveTo(cpx, cpy, x2, y2);
+        ctx.strokeStyle = 'rgba(245,158,11,0.5)';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      } else {
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.strokeStyle = 'rgba(16,185,129,0.5)';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([4, 3]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+    });
+
+    // Draw current route being animated
+    if (pb.currentIndex < pb.trips.length && pb.routeProgress > 0) {
+      const t = pb.trips[pb.currentIndex];
+      const [x1, y1] = this.project(t.fromLat, t.fromLng);
+      const [x2, y2] = this.project(t.toLat, t.toLng);
+      const isF = t.type === 'flight';
+      const progress = pb.routeProgress;
+
+      if (isF) {
+        const mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
+        const dist = Math.hypot(x2 - x1, y2 - y1);
+        const arcH = dist * 0.18;
+        const angle = Math.atan2(y2 - y1, x2 - x1);
+        const cpx = mx - arcH * Math.sin(angle);
+        const cpy = my + arcH * Math.cos(angle);
+
+        // Draw partial bezier using subdivide
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        // Approximate partial quadratic bezier
+        const steps = 30;
+        const maxStep = Math.floor(steps * progress);
+        for (let i = 1; i <= maxStep; i++) {
+          const tt = i / steps;
+          const px = (1 - tt) * (1 - tt) * x1 + 2 * (1 - tt) * tt * cpx + tt * tt * x2;
+          const py = (1 - tt) * (1 - tt) * y1 + 2 * (1 - tt) * tt * cpy + tt * tt * y2;
+          ctx.lineTo(px, py);
+        }
+
+        // Glowing line
+        ctx.strokeStyle = 'rgba(251,191,36,0.9)';
+        ctx.lineWidth = 3;
+        ctx.shadowColor = '#fbbf24';
+        ctx.shadowBlur = 10;
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+
+        // Moving plane at current position
+        const pt = progress;
+        const px = (1 - pt) * (1 - pt) * x1 + 2 * (1 - pt) * pt * cpx + pt * pt * x2;
+        const py = (1 - pt) * (1 - pt) * y1 + 2 * (1 - pt) * pt * cpy + pt * pt * y2;
+        ctx.beginPath();
+        ctx.arc(px, py, 5, 0, Math.PI * 2);
+        ctx.fillStyle = '#fbbf24';
+        ctx.shadowColor = '#fbbf24';
+        ctx.shadowBlur = 15;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+      } else {
+        // Train: partial line
+        const ex = x1 + (x2 - x1) * progress;
+        const ey = y1 + (y2 - y1) * progress;
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(ex, ey);
+        ctx.strokeStyle = 'rgba(16,185,129,0.9)';
+        ctx.lineWidth = 3;
+        ctx.shadowColor = '#10b981';
+        ctx.shadowBlur = 10;
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+
+        ctx.beginPath();
+        ctx.arc(ex, ey, 4, 0, Math.PI * 2);
+        ctx.fillStyle = '#10b981';
+        ctx.shadowColor = '#10b981';
+        ctx.shadowBlur = 12;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+      }
+    }
+
+    // Draw city dots for revealed cities
+    const cityPositions = new Map();
+    [...pb.revealedRoutes, ...(pb.currentIndex < pb.trips.length ? [pb.trips[pb.currentIndex]] : [])].forEach(t => {
+      if (t.fromCity && !cityPositions.has(t.fromCity)) cityPositions.set(t.fromCity, { lat: t.fromLat, lng: t.fromLng, type: t.type });
+      if (t.toCity && pb.revealedCities.has(t.toCity) && !cityPositions.has(t.toCity)) cityPositions.set(t.toCity, { lat: t.toLat, lng: t.toLng, type: t.type });
+    });
+    cityPositions.forEach((pos, city) => {
+      const [x, y] = this.project(pos.lat, pos.lng);
+      const color = pos.type === 'flight' ? '#f59e0b' : '#10b981';
+      ctx.beginPath();
+      ctx.arc(x, y, 4, 0, Math.PI * 2);
+      ctx.fillStyle = color;
+      ctx.fill();
+      ctx.font = 'bold 10px -apple-system, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.strokeStyle = 'rgba(7,13,24,0.9)';
+      ctx.lineWidth = 3;
+      ctx.lineJoin = 'round';
+      ctx.strokeText(city, x, y - 8);
+      ctx.fillStyle = pos.type === 'flight' ? '#fbbf24' : '#34d399';
+      ctx.fillText(city, x, y - 8);
+    });
+
+    // Progress bar at bottom
+    const totalRoutes = pb.trips.length;
+    const completed = pb.currentIndex + pb.routeProgress;
+    const progressPct = completed / totalRoutes;
+    ctx.fillStyle = 'rgba(55,65,81,0.3)';
+    ctx.fillRect(0, H - 3, W, 3);
+    ctx.fillStyle = '#fbbf24';
+    ctx.fillRect(0, H - 3, W * progressPct, 3);
   },
 
   updateSummary() {
