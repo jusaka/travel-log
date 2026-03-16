@@ -399,13 +399,24 @@ const TravelMap = {
       }
     });
 
-    // Draw animated plane icons on flight routes
+    // Draw animated plane icons on DEDUPLICATED flight routes
+    // Must use same key logic as route drawing to match curve direction
     const phase = this._animPhase;
-    flights.forEach((f, i) => {
+    const drawnPlaneRoutes = new Set();
+    let planeIdx = 0;
+    flights.forEach(f => {
+      const a = `${f.fromLat.toFixed(2)},${f.fromLng.toFixed(2)}`;
+      const b = `${f.toLat.toFixed(2)},${f.toLng.toFixed(2)}`;
+      const key = a < b ? `${a}-${b}` : `${b}-${a}`;
+      if (drawnPlaneRoutes.has(key)) return;
+      drawnPlaneRoutes.add(key);
+
+      // Use consistent point order (same as route drawing: always use the trip's own from→to
+      // but we need the FIRST trip that defined this key to get consistent direction)
       const [x1, y1] = this.project(f.fromLat, f.fromLng);
       const [x2, y2] = this.project(f.toLat, f.toLng);
       const dist = Math.hypot(x2 - x1, y2 - y1);
-      if (dist < 20) return;
+      if (dist < 20) { planeIdx++; return; }
 
       const arcH = dist * 0.22;
       const angle = Math.atan2(y2 - y1, x2 - x1);
@@ -415,7 +426,7 @@ const TravelMap = {
       const cpy = my + arcH * Math.cos(angle);
 
       // Each plane has different phase offset
-      const t = ((phase + i * 0.15) % 1);
+      const t = ((phase + planeIdx * 0.15) % 1);
       const px = (1 - t) * (1 - t) * x1 + 2 * (1 - t) * t * cpx + t * t * x2;
       const py = (1 - t) * (1 - t) * y1 + 2 * (1 - t) * t * cpy + t * t * y2;
       // Direction tangent
@@ -423,16 +434,37 @@ const TravelMap = {
       const dy = 2 * (1 - t) * (cpy - y1) + 2 * t * (y2 - cpy);
       const dir = Math.atan2(dy, dx);
 
+      // Draw plane icon using Canvas path (not emoji - better cross-platform)
+      const planeSize = Math.max(5, Math.min(8, dist * 0.035));
       ctx.save();
       ctx.translate(px, py);
       ctx.rotate(dir);
-      const planeSize = Math.max(12, Math.min(18, dist * 0.08));
-      ctx.font = `${planeSize}px sans-serif`;
-      ctx.fillStyle = '#fbbf24';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText('✈', 0, 0);
+      ctx.beginPath();
+      // Plane body (pointing right →)
+      ctx.moveTo(planeSize * 1.2, 0);           // nose
+      ctx.lineTo(-planeSize * 0.6, -planeSize * 0.25);  // top body
+      ctx.lineTo(-planeSize * 1.0, -planeSize * 0.15);  // tail top
+      ctx.lineTo(-planeSize * 1.0, planeSize * 0.15);   // tail bottom
+      ctx.lineTo(-planeSize * 0.6, planeSize * 0.25);   // bottom body
+      ctx.closePath();
+      // Wings
+      ctx.moveTo(planeSize * 0.1, -planeSize * 0.2);
+      ctx.lineTo(-planeSize * 0.2, -planeSize * 1.0);
+      ctx.lineTo(-planeSize * 0.5, -planeSize * 0.9);
+      ctx.lineTo(-planeSize * 0.4, -planeSize * 0.2);
+      ctx.moveTo(planeSize * 0.1, planeSize * 0.2);
+      ctx.lineTo(-planeSize * 0.2, planeSize * 1.0);
+      ctx.lineTo(-planeSize * 0.5, planeSize * 0.9);
+      ctx.lineTo(-planeSize * 0.4, planeSize * 0.2);
+      ctx.fillStyle = 'rgba(251,191,36,0.95)';
+      ctx.fill();
+      // Glow
+      ctx.shadowColor = '#fbbf24';
+      ctx.shadowBlur = 6;
+      ctx.fill();
+      ctx.shadowBlur = 0;
       ctx.restore();
+      planeIdx++;
     });
 
     // Collect endpoints - merge same-city airports
