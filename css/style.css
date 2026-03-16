@@ -1,5 +1,6 @@
 /* ===== CSS Reset & Variables ===== */
-*{margin:0;padding:0;box-sizing:border-box}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{touch-action:manipulation}
 :root{
   --bg:#0a0f1a;--bg2:#111827;--bg3:#1f2937;--bg4:#374151;
   --text:#f3f4f6;--text2:#9ca3af;--text3:#6b7280;
