@@ -149,16 +149,38 @@
     const trips = Store.getAll();
     if (!trips.length) { showToast('没有数据'); return; }
     const data = Store.exportData();
-    try {
-      await navigator.clipboard.writeText(data);
-      showToast(`已复制 ${trips.length} 条行程到剪贴板 ✅`);
-    } catch(e) {
-      const ta = document.createElement('textarea');
-      ta.value = data; ta.style.position = 'fixed'; ta.style.opacity = '0';
-      document.body.appendChild(ta); ta.select(); document.execCommand('copy');
-      document.body.removeChild(ta);
-      showToast(`已复制 ${trips.length} 条行程到剪贴板 ✅`);
+    // Show a modal with textarea for manual copy (iOS clipboard API unreliable)
+    let copyModal = document.getElementById('copyDataModal');
+    if (!copyModal) {
+      copyModal = document.createElement('div');
+      copyModal.id = 'copyDataModal';
+      copyModal.className = 'modal';
+      copyModal.style.display = 'none';
+      copyModal.innerHTML = `<div class="modal-content">
+        <div class="modal-header">
+          <h3>📤 备份数据</h3>
+          <button class="modal-close" onclick="closeModal('copyDataModal')">×</button>
+        </div>
+        <div class="modal-body">
+          <p style="font-size:12px;color:var(--text2);margin-bottom:8px">长按下方文本框 → 全选 → 拷贝</p>
+          <textarea id="copyDataText" readonly style="width:100%;height:200px;font-size:11px;font-family:monospace;background:var(--bg);color:var(--text);border:1px solid var(--bg3);border-radius:8px;padding:8px;resize:none"></textarea>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" onclick="closeModal('copyDataModal')">关闭</button>
+        </div>
+      </div>`;
+      document.body.appendChild(copyModal);
+      copyModal.addEventListener('click', e => { if (e.target === copyModal) closeModal('copyDataModal'); });
     }
+    document.getElementById('copyDataText').value = data;
+    closeModal('settingsModal');
+    openModal('copyDataModal');
+    // Auto select all text
+    setTimeout(() => {
+      const ta = document.getElementById('copyDataText');
+      ta.focus();
+      ta.select();
+    }, 300);
   };
 
   // Paste from clipboard
