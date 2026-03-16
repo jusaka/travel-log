@@ -43,12 +43,34 @@ const TravelMap = {
   },
 
   resetView() {
-    const chinaLngSpan = 62;
-    const chinaLatSpan = 36;
-    this.baseScale = Math.min(this.W / chinaLngSpan, this.H / chinaLatSpan) * 0.9;
-    this.scale = this.baseScale;
-    this.centerLng = 105;
-    this.centerLat = 35;
+    // Auto-fit view to all trip endpoints
+    const trips = Store.getAll();
+    if (trips.length > 0) {
+      let minLat = 90, maxLat = -90, minLng = 180, maxLng = -180;
+      trips.forEach(t => {
+        [t.fromLat, t.toLat].forEach(lat => { if (lat != null) { minLat = Math.min(minLat, lat); maxLat = Math.max(maxLat, lat); }});
+        [t.fromLng, t.toLng].forEach(lng => { if (lng != null) { minLng = Math.min(minLng, lng); maxLng = Math.max(maxLng, lng); }});
+      });
+      // Add padding
+      const latPad = Math.max((maxLat - minLat) * 0.15, 3);
+      const lngPad = Math.max((maxLng - minLng) * 0.15, 5);
+      minLat -= latPad; maxLat += latPad;
+      minLng -= lngPad; maxLng += lngPad;
+      this.centerLat = (minLat + maxLat) / 2;
+      this.centerLng = (minLng + maxLng) / 2;
+      const lngSpan = maxLng - minLng;
+      const latSpan = maxLat - minLat;
+      this.baseScale = Math.min(this.W / lngSpan, this.H / latSpan) * 0.9;
+      this.scale = this.baseScale;
+    } else {
+      // Default: China centered
+      const chinaLngSpan = 62;
+      const chinaLatSpan = 36;
+      this.baseScale = Math.min(this.W / chinaLngSpan, this.H / chinaLatSpan) * 0.9;
+      this.scale = this.baseScale;
+      this.centerLng = 105;
+      this.centerLat = 35;
+    }
     this.draw();
   },
 
@@ -241,29 +263,48 @@ const TravelMap = {
       return;
     }
 
-    // Count route frequency
+    // Count route frequency (both directions merged)
     const routeFreq = {};
+    let maxFreq = 1;
     trips.forEach(t => {
-      const key = `${t.fromLat?.toFixed(2)},${t.fromLng?.toFixed(2)}-${t.toLat?.toFixed(2)},${t.toLng?.toFixed(2)}`;
+      if (!t.fromLat || !t.toLat) return;
+      const a = `${t.fromLat.toFixed(2)},${t.fromLng.toFixed(2)}`;
+      const b = `${t.toLat.toFixed(2)},${t.toLng.toFixed(2)}`;
+      // Merge both directions
+      const key = a < b ? `${a}-${b}` : `${b}-${a}`;
       routeFreq[key] = (routeFreq[key] || 0) + 1;
+      if (routeFreq[key] > maxFreq) maxFreq = routeFreq[key];
     });
+    // Helper to get freq for a trip
+    const getFreq = t => {
+      const a = `${t.fromLat.toFixed(2)},${t.fromLng.toFixed(2)}`;
+      const b = `${t.toLat.toFixed(2)},${t.toLng.toFixed(2)}`;
+      const key = a < b ? `${a}-${b}` : `${b}-${a}`;
+      return routeFreq[key] || 1;
+    };
 
     const flights = trips.filter(t => t.type === 'flight' && t.fromLat != null && t.toLat != null);
     const trains = trips.filter(t => t.type === 'train' && t.fromLat != null && t.toLat != null);
 
-    // Draw train routes (green, solid lines with glow)
+    // Deduplicate routes - draw each route only once with combined frequency
+    const drawnTrainRoutes = new Set();
     trains.forEach(t => {
+      const a = `${t.fromLat.toFixed(2)},${t.fromLng.toFixed(2)}`;
+      const b = `${t.toLat.toFixed(2)},${t.toLng.toFixed(2)}`;
+      const key = a < b ? `${a}-${b}` : `${b}-${a}`;
+      if (drawnTrainRoutes.has(key)) return;
+      drawnTrainRoutes.add(key);
+
       const [x1, y1] = this.project(t.fromLat, t.fromLng);
       const [x2, y2] = this.project(t.toLat, t.toLng);
-      const key = `${t.fromLat?.toFixed(2)},${t.fromLng?.toFixed(2)}-${t.toLat?.toFixed(2)},${t.toLng?.toFixed(2)}`;
-      const freq = routeFreq[key] || 1;
-      const lw = 1 + freq * 0.5;
+      const freq = getFreq(t);
+      const lw = 1 + Math.log2(freq + 1) * 1.5;
 
       // Glow
       ctx.beginPath();
       ctx.moveTo(x1, y1);
       ctx.lineTo(x2, y2);
-      ctx.strokeStyle = 'rgba(16,185,129,0.15)';
+      ctx.strokeStyle = `rgba(16,185,129,${0.08 + freq * 0.04})`;
       ctx.lineWidth = lw + 4;
       ctx.stroke();
 
@@ -271,20 +312,26 @@ const TravelMap = {
       ctx.beginPath();
       ctx.moveTo(x1, y1);
       ctx.lineTo(x2, y2);
-      ctx.strokeStyle = 'rgba(16,185,129,0.7)';
+      ctx.strokeStyle = `rgba(16,185,129,${0.5 + Math.min(freq * 0.1, 0.4)})`;
       ctx.lineWidth = lw;
       ctx.setLineDash([4, 3]);
       ctx.stroke();
       ctx.setLineDash([]);
     });
 
-    // Draw flight routes (amber, curved arcs)
+    // Draw flight routes - deduplicate, thicker = more frequent
+    const drawnFlightRoutes = new Set();
     flights.forEach(f => {
+      const a = `${f.fromLat.toFixed(2)},${f.fromLng.toFixed(2)}`;
+      const b = `${f.toLat.toFixed(2)},${f.toLng.toFixed(2)}`;
+      const key = a < b ? `${a}-${b}` : `${b}-${a}`;
+      if (drawnFlightRoutes.has(key)) return;
+      drawnFlightRoutes.add(key);
+
       const [x1, y1] = this.project(f.fromLat, f.fromLng);
       const [x2, y2] = this.project(f.toLat, f.toLng);
-      const key = `${f.fromLat?.toFixed(2)},${f.fromLng?.toFixed(2)}-${f.toLat?.toFixed(2)},${f.toLng?.toFixed(2)}`;
-      const freq = routeFreq[key] || 1;
-      const lw = 1 + freq * 0.5;
+      const freq = getFreq(f);
+      const lw = 1 + Math.log2(freq + 1) * 1.8;
 
       const mx = (x1 + x2) / 2;
       const my = (y1 + y2) / 2;
@@ -294,25 +341,44 @@ const TravelMap = {
       const cpx = mx - arcH * Math.sin(angle);
       const cpy = my + arcH * Math.cos(angle);
 
-      // Glow
+      // Glow - intensity based on frequency
       ctx.beginPath();
       ctx.moveTo(x1, y1);
       ctx.quadraticCurveTo(cpx, cpy, x2, y2);
-      ctx.strokeStyle = 'rgba(245,158,11,0.12)';
+      ctx.strokeStyle = `rgba(245,158,11,${0.06 + freq * 0.04})`;
       ctx.lineWidth = lw + 5;
       ctx.stroke();
 
       // Animated-style gradient arc
+      const alpha = 0.3 + Math.min(freq * 0.12, 0.6);
       const grad = ctx.createLinearGradient(x1, y1, x2, y2);
-      grad.addColorStop(0, 'rgba(245,158,11,0.4)');
-      grad.addColorStop(0.5, 'rgba(251,191,36,0.9)');
-      grad.addColorStop(1, 'rgba(245,158,11,0.4)');
+      grad.addColorStop(0, `rgba(245,158,11,${alpha * 0.5})`);
+      grad.addColorStop(0.5, `rgba(251,191,36,${alpha})`);
+      grad.addColorStop(1, `rgba(245,158,11,${alpha * 0.5})`);
       ctx.beginPath();
       ctx.moveTo(x1, y1);
       ctx.quadraticCurveTo(cpx, cpy, x2, y2);
       ctx.strokeStyle = grad;
       ctx.lineWidth = lw;
       ctx.stroke();
+
+      // Frequency badge for hot routes
+      if (freq >= 4 && dist > 40) {
+        const badgeT = 0.5;
+        const bx = (1-badgeT)*(1-badgeT)*x1 + 2*(1-badgeT)*badgeT*cpx + badgeT*badgeT*x2;
+        const by = (1-badgeT)*(1-badgeT)*y1 + 2*(1-badgeT)*badgeT*cpy + badgeT*badgeT*y2;
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(bx, by, 8, 0, Math.PI*2);
+        ctx.fillStyle = 'rgba(245,158,11,0.9)';
+        ctx.fill();
+        ctx.font = 'bold 9px -apple-system, sans-serif';
+        ctx.fillStyle = '#000';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(freq + '', bx, by);
+        ctx.restore();
+      }
 
       // Arrow at destination
       if (dist > 30) {
@@ -387,6 +453,7 @@ const TravelMap = {
 
     // Draw endpoints
     const zoom = this.scale / this.baseScale;
+    const labelsToDraw = [];
     endpoints.forEach(ep => {
       const [x, y] = this.project(ep.lat, ep.lng);
       if (x < -30 || x > W + 30 || y < -30 || y > H + 30) return;
@@ -431,19 +498,59 @@ const TravelMap = {
         ctx.setLineDash([]);
       }
 
-      // City label
+      // City label - collect for smart placement later
       if (ep.city && (zoom >= 1.0 || ep.count >= 2)) {
         const fontSize = Math.round(9 + Math.min(ep.count, 3) + (zoom > 1.5 ? 2 : 0));
-        ctx.font = `bold ${fontSize}px -apple-system, sans-serif`;
+        labelsToDraw.push({ x, y: y - r - 5, text: ep.city, fontSize, color: hasFlight ? '#fbbf24' : '#34d399', r });
+      }
+    });
+
+    // Smart label placement - avoid overlaps
+    const labelRects = [];
+    labelsToDraw.forEach(label => {
+      ctx.font = `bold ${label.fontSize}px -apple-system, sans-serif`;
+      const tw = ctx.measureText(label.text).width;
+      const th = label.fontSize;
+      // Try positions: top, right, left, bottom
+      const positions = [
+        { x: label.x, y: label.y, ax: 'center' },           // top
+        { x: label.x + label.r + 4, y: label.y + label.r + th/2, ax: 'left' },   // right
+        { x: label.x - label.r - 4, y: label.y + label.r + th/2, ax: 'right' },  // left
+        { x: label.x, y: label.y + label.r * 2 + th + 4, ax: 'center' },         // bottom
+      ];
+      let placed = false;
+      for (const pos of positions) {
+        const lx = pos.ax === 'center' ? pos.x - tw/2 : pos.ax === 'left' ? pos.x : pos.x - tw;
+        const ly = pos.y - th;
+        const rect = { x: lx - 2, y: ly - 1, w: tw + 4, h: th + 2 };
+        // Check overlap with existing labels
+        const overlaps = labelRects.some(r => !(rect.x + rect.w < r.x || rect.x > r.x + r.w || rect.y + rect.h < r.y || rect.y > r.y + r.h));
+        if (!overlaps) {
+          labelRects.push(rect);
+          ctx.font = `bold ${label.fontSize}px -apple-system, sans-serif`;
+          ctx.textAlign = pos.ax;
+          ctx.strokeStyle = 'rgba(7,13,24,0.9)';
+          ctx.lineWidth = 3;
+          ctx.lineJoin = 'round';
+          ctx.strokeText(label.text, pos.x, pos.y);
+          ctx.fillStyle = label.color;
+          ctx.fillText(label.text, pos.x, pos.y);
+          placed = true;
+          break;
+        }
+      }
+      // If all positions overlap, draw at default with reduced opacity
+      if (!placed) {
+        ctx.font = `bold ${label.fontSize}px -apple-system, sans-serif`;
         ctx.textAlign = 'center';
-        // Shadow/stroke for readability
+        ctx.globalAlpha = 0.5;
         ctx.strokeStyle = 'rgba(7,13,24,0.9)';
         ctx.lineWidth = 3;
         ctx.lineJoin = 'round';
-        ctx.strokeText(ep.city, x, y - r - 5);
-        // Text
-        ctx.fillStyle = hasFlight ? '#fbbf24' : '#34d399';
-        ctx.fillText(ep.city, x, y - r - 5);
+        ctx.strokeText(label.text, label.x, label.y);
+        ctx.fillStyle = label.color;
+        ctx.fillText(label.text, label.x, label.y);
+        ctx.globalAlpha = 1;
       }
     });
   },

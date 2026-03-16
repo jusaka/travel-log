@@ -31,17 +31,26 @@ const Stats = {
       </div>
     </div>`;
 
-    // Overview
-    html += `<div class="stat-card">
-      <h4>📋 出行概览</h4>
-      <div class="stat-row"><span class="stat-label">总行程</span><span class="stat-value">${stats.totalTrips} 次</span></div>
-      <div class="stat-row"><span class="stat-label">✈️ 飞行</span><span class="stat-value">${stats.flightCount} 次</span></div>
-      <div class="stat-row"><span class="stat-label">🚄 高铁</span><span class="stat-value">${stats.trainCount} 次</span></div>
-      <div class="stat-row"><span class="stat-label">到访城市</span><span class="stat-value">${stats.cityCount} 个</span></div>
-      <div class="stat-row"><span class="stat-label">途经机场</span><span class="stat-value">${stats.airportCount} 个</span></div>
-      <div class="stat-row"><span class="stat-label">途经车站</span><span class="stat-value">${stats.stationCount} 个</span></div>
-      <div class="stat-row"><span class="stat-label">总旅途时间</span><span class="stat-value">${fmtDuration(stats.totalMins)}</span></div>
-    </div>`;
+    // Overview - only show non-zero rows
+    {
+      const overviewRows = [
+        ['总行程', stats.totalTrips, '次', ''],
+        ['✈️ 飞行', stats.flightCount, '次', 'var(--flight)'],
+        ['🚄 高铁', stats.trainCount, '次', 'var(--train)'],
+        ['🏙️ 到访城市', stats.cityCount, '个', ''],
+        ['🛫 途经机场', stats.airportCount, '个', ''],
+        ['🚉 途经车站', stats.stationCount, '个', ''],
+        ['⏱️ 总旅途时间', stats.totalMins, '', ''],
+      ].filter(([, val]) => val > 0);
+      html += `<div class="stat-card">
+        <h4>📋 出行概览</h4>
+        ${overviewRows.map(([label, val, unit, color]) => {
+          const display = label.includes('时间') ? fmtDuration(val) : val + ' ' + unit;
+          const style = color ? ` style="color:${color};font-weight:700"` : '';
+          return `<div class="stat-row"><span class="stat-label">${label}</span><span class="stat-value"${style}>${display}</span></div>`;
+        }).join('')}
+      </div>`;
+    }
 
     // Pie chart: flight vs train
     if (stats.flightCount > 0 && stats.trainCount > 0) {

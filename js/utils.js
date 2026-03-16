@@ -81,15 +81,16 @@ function showConfirm(msg, onOk) {
 // Date formatting
 function fmtDate(dateStr) {
   const d = new Date(dateStr);
+  const y = d.getFullYear();
   const m = d.getMonth() + 1;
   const day = d.getDate();
   const weekdays = ['日','一','二','三','四','五','六'];
-  return `${m}月${day}日 周${weekdays[d.getDay()]}`;
+  return `${y}.${m}.${day} 周${weekdays[d.getDay()]}`;
 }
 
 function fmtDateShort(dateStr) {
   const d = new Date(dateStr);
-  return `${d.getMonth()+1}.${d.getDate()}`;
+  return `${d.getFullYear()}.${d.getMonth()+1}.${d.getDate()}`;
 }
 
 // Get year from date string
