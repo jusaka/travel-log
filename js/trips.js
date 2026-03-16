@@ -127,6 +127,14 @@ const Trips = {
     document.getElementById('modalTitle').textContent = '添加行程';
     document.getElementById('btnDeleteTrip').style.display = 'none';
     document.getElementById('btnDuplicateTrip').style.display = 'none';
+    // Reset to manual mode
+    document.getElementById('addModeToggle').style.display = '';
+    document.getElementById('manualFormSection').style.display = '';
+    document.getElementById('aiImportSection').style.display = 'none';
+    document.getElementById('btnSaveTrip').textContent = '保存';
+    document.getElementById('aiPasteInput').value = '';
+    document.getElementById('aiPastePreview').innerHTML = '';
+    document.querySelectorAll('.mode-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === 'manual'));
     this.clearForm();
     // Remember last used date, or default to today
     const lastDate = localStorage.getItem('travellog_lastDate') || new Date().toISOString().split('T')[0];
@@ -143,6 +151,11 @@ const Trips = {
     document.getElementById('modalTitle').textContent = '编辑行程';
     document.getElementById('btnDeleteTrip').style.display = '';
     document.getElementById('btnDuplicateTrip').style.display = '';
+    // Edit mode: hide mode toggle, force manual
+    document.getElementById('addModeToggle').style.display = 'none';
+    document.getElementById('manualFormSection').style.display = '';
+    document.getElementById('aiImportSection').style.display = 'none';
+    document.getElementById('btnSaveTrip').textContent = '保存';
     this.clearForm();
 
     // Set type
