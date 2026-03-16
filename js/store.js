@@ -265,6 +265,13 @@ const Store = {
         trips = data;
       } else if (data.app === 'travellog' && Array.isArray(data.trips)) {
         trips = data.trips;
+        // v2: also restore groups if present
+        if (Array.isArray(data.groups)) {
+          const existingGroupIds = new Set(this._groups.map(g => g.id));
+          data.groups.forEach(g => {
+            if (!existingGroupIds.has(g.id)) this._groups.push(g);
+          });
+        }
       } else if (Array.isArray(data.trips)) {
         trips = data.trips;
       } else {
