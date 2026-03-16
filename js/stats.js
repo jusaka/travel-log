@@ -41,11 +41,12 @@ const Stats = {
         ['🛫 途经机场', stats.airportCount, '个', ''],
         ['🚉 途经车站', stats.stationCount, '个', ''],
         ['⏱️ 总旅途时间', stats.totalMins, '', ''],
+        ['💰 总交通花费', stats.totalPrice, '元', ''],
       ].filter(([, val]) => val > 0);
       html += `<div class="stat-card">
         <h4>📋 出行概览</h4>
         ${overviewRows.map(([label, val, unit, color]) => {
-          const display = label.includes('时间') ? fmtDuration(val) : val + ' ' + unit;
+          const display = label.includes('时间') ? fmtDuration(val) : label.includes('花费') ? '¥' + val.toLocaleString() : val + ' ' + unit;
           const style = color ? ` style="color:${color};font-weight:700"` : '';
           return `<div class="stat-row"><span class="stat-label">${label}</span><span class="stat-value"${style}>${display}</span></div>`;
         }).join('')}

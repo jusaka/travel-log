@@ -575,8 +575,21 @@ const Annual = {
     return `<div class="annual-section">
       <h3>📆 出行热力图</h3>
       <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px">
-        <div class="heatmap-grid" style="min-width:320px">${cells}</div>
-        <div class="heatmap-months" style="min-width:320px">${monthLabels.map(m => `<span>${m}</span>`).join('')}</div>
+        <div style="display:flex;gap:2px;min-width:320px">
+          <div class="heatmap-weekdays" style="display:flex;flex-direction:column;gap:2px;font-size:8px;color:var(--text3);padding-right:3px;flex-shrink:0">
+            <div style="aspect-ratio:1;display:flex;align-items:center;visibility:hidden">-</div>
+            <div style="aspect-ratio:1;display:flex;align-items:center">一</div>
+            <div style="aspect-ratio:1;display:flex;align-items:center;visibility:hidden">-</div>
+            <div style="aspect-ratio:1;display:flex;align-items:center">三</div>
+            <div style="aspect-ratio:1;display:flex;align-items:center;visibility:hidden">-</div>
+            <div style="aspect-ratio:1;display:flex;align-items:center">五</div>
+            <div style="aspect-ratio:1;display:flex;align-items:center;visibility:hidden">-</div>
+          </div>
+          <div style="flex:1;min-width:0">
+            <div class="heatmap-grid" style="min-width:290px">${cells}</div>
+          </div>
+        </div>
+        <div class="heatmap-months" style="min-width:320px;padding-left:16px">${monthLabels.map(m => `<span>${m}</span>`).join('')}</div>
       </div>
       <div style="display:flex;align-items:center;gap:4px;justify-content:flex-end;margin-top:6px;font-size:10px;color:var(--text3)">
         少 <div class="heat-cell" style="width:10px;height:10px;display:inline-block"></div>

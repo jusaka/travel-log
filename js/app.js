@@ -54,9 +54,11 @@
 
   // Theme toggle
   const updateThemeButtons = () => {
+    const theme = localStorage.getItem('travellog_theme');
     const isLight = document.documentElement.classList.contains('light');
-    document.getElementById('btnThemeDark').classList.toggle('active', !isLight);
-    document.getElementById('btnThemeLight').classList.toggle('active', isLight);
+    document.getElementById('btnThemeDark').classList.toggle('active', theme === 'dark');
+    document.getElementById('btnThemeLight').classList.toggle('active', theme === 'light');
+    document.getElementById('btnThemeAuto').classList.toggle('active', !theme);
   };
   document.getElementById('btnThemeDark').onclick = () => {
     document.documentElement.classList.remove('light');
@@ -70,10 +72,25 @@
     updateThemeButtons();
     TravelMap.draw();
   };
-  // Init theme from storage
-  if (localStorage.getItem('travellog_theme') === 'light') {
+  document.getElementById('btnThemeAuto').onclick = () => {
+    localStorage.removeItem('travellog_theme');
+    const preferLight = window.matchMedia('(prefers-color-scheme: light)').matches;
+    document.documentElement.classList.toggle('light', preferLight);
+    updateThemeButtons();
+    TravelMap.draw();
+  };
+  // Init theme from storage (support: dark / light / auto)
+  const savedTheme = localStorage.getItem('travellog_theme');
+  if (savedTheme === 'light' || (!savedTheme && window.matchMedia('(prefers-color-scheme: light)').matches)) {
     document.documentElement.classList.add('light');
   }
+  // Listen for system theme changes when in auto mode
+  window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', e => {
+    if (!localStorage.getItem('travellog_theme')) {
+      document.documentElement.classList.toggle('light', e.matches);
+      TravelMap.draw();
+    }
+  });
   updateThemeButtons();
 
   // Copy to clipboard
@@ -272,7 +289,9 @@
     });
   });
 
-  // Loading screen
+  // Loading screen - skip/shorten if returning user
+  const hasData = localStorage.getItem(STORE_KEY);
+  const loadDelay = hasData ? 200 : 800;
   setTimeout(() => {
     document.getElementById('loading').style.opacity = '0';
     document.getElementById('loading').style.transition = 'opacity 0.3s';
@@ -281,7 +300,7 @@
       document.getElementById('loading').remove();
       TravelMap.resize();
     }, 300);
-  }, 800);
+  }, loadDelay);
 
   // Keyboard shortcuts
   document.addEventListener('keydown', e => {

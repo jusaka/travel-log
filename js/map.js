@@ -548,6 +548,9 @@ const TravelMap = {
 
     // Smart label placement - avoid overlaps
     const labelRects = [];
+
+    // Draw scale bar
+    this._drawScaleBar(ctx, W, H, isLight);
     labelsToDraw.forEach(label => {
       ctx.font = `bold ${label.fontSize}px -apple-system, sans-serif`;
       const tw = ctx.measureText(label.text).width;
@@ -594,6 +597,33 @@ const TravelMap = {
         ctx.globalAlpha = 1;
       }
     });
+  },
+
+  _drawScaleBar(ctx, W, H, isLight) {
+    // Calculate scale: 1 degree of longitude at current center lat
+    const cosLat = Math.cos(this.centerLat * Math.PI / 180);
+    const kmPerDeg = 111.32 * cosLat; // km per degree longitude at this latitude
+    const pixPerKm = this.scale / kmPerDeg * (1 / (window.devicePixelRatio || 1));
+    // Find a nice round distance that fits ~60-120px
+    const niceDistances = [50, 100, 200, 500, 1000, 2000, 5000];
+    let dist = 100, barPx = 60;
+    for (const d of niceDistances) {
+      const px = d * pixPerKm;
+      if (px >= 40 && px <= 150) { dist = d; barPx = px; break; }
+    }
+    // Draw at bottom-left
+    const x = 16, y = H - 46;
+    const color = isLight ? 'rgba(31,41,55,0.7)' : 'rgba(209,213,219,0.7)';
+    ctx.strokeStyle = color;
+    ctx.fillStyle = color;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(x, y - 4); ctx.lineTo(x, y); ctx.lineTo(x + barPx, y); ctx.lineTo(x + barPx, y - 4);
+    ctx.stroke();
+    ctx.font = '9px -apple-system, sans-serif';
+    ctx.textAlign = 'center';
+    const label = dist >= 1000 ? (dist / 1000) + '千km' : dist + 'km';
+    ctx.fillText(label, x + barPx / 2, y - 6);
   },
 
   _checkHover(mx, my, isTap) {

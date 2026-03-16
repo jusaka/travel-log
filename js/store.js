@@ -83,6 +83,7 @@ const Store = {
 
     let totalFlightKm = 0, totalTrainKm = 0;
     let totalFlightMins = 0, totalTrainMins = 0;
+    let totalPrice = 0;
     const cities = new Set();
     const airports = new Set();
     const stations = new Set();
@@ -94,6 +95,7 @@ const Store = {
       const d = f.distance || 0;
       totalFlightKm += d;
       totalFlightMins += f.duration || 0;
+      if (f.price) totalPrice += f.price;
       if (f.fromCode) airports.add(f.fromCode);
       if (f.toCode) airports.add(f.toCode);
       if (f.fromCity) { cities.add(f.fromCity); fromCities[f.fromCity] = (fromCities[f.fromCity]||0)+1; }
@@ -107,6 +109,7 @@ const Store = {
       const d = t.distance || 0;
       totalTrainKm += d;
       totalTrainMins += t.duration || 0;
+      if (t.price) totalPrice += t.price;
       if (t.fromCity) { cities.add(t.fromCity); fromCities[t.fromCity] = (fromCities[t.fromCity]||0)+1; }
       if (t.toCity) { cities.add(t.toCity); toCities[t.toCity] = (toCities[t.toCity]||0)+1; }
       if (t.fromStation) stations.add(t.fromStation);
@@ -164,6 +167,7 @@ const Store = {
       totalKm: totalFlightKm + totalTrainKm,
       totalFlightMins, totalTrainMins,
       totalMins: totalFlightMins + totalTrainMins,
+      totalPrice,
       cityCount: cities.size,
       airportCount: airports.size,
       stationCount: stations.size,

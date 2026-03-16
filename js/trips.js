@@ -164,6 +164,7 @@ const Trips = {
       document.getElementById('fSeat').value = trip.seat || '';
       document.getElementById('fClass').value = trip.seatClass || 'economy';
       document.getElementById('fNote').value = trip.note || '';
+      document.getElementById('fPrice').value = trip.price || '';
     } else {
       document.getElementById('tDate').value = trip.date || '';
       document.getElementById('tTrainNo').value = trip.trainNo || '';
@@ -184,14 +185,15 @@ const Trips = {
       document.getElementById('tSeat').value = trip.seat || '';
       document.getElementById('tSeatType').value = trip.seatType || 'second';
       document.getElementById('tNote').value = trip.note || '';
+      document.getElementById('tPrice').value = trip.price || '';
     }
 
     openModal('addTripModal');
   },
 
   clearForm() {
-    ['fDate','fFlightNo','fFrom','fTo','fDepTime','fArrTime','fAircraft','fSeat','fNote',
-     'tDate','tTrainNo','tFrom','tTo','tDepTime','tArrTime','tSeat','tNote'].forEach(id => {
+    ['fDate','fFlightNo','fFrom','fTo','fDepTime','fArrTime','fAircraft','fSeat','fNote','fPrice',
+     'tDate','tTrainNo','tFrom','tTo','tDepTime','tArrTime','tSeat','tNote','tPrice'].forEach(id => {
       const el = document.getElementById(id);
       el.value = '';
       delete el.dataset.lat;
@@ -232,6 +234,8 @@ const Trips = {
       trip.seat = document.getElementById('fSeat').value;
       trip.seatClass = document.getElementById('fClass').value;
       trip.note = document.getElementById('fNote').value;
+      const fPrice = document.getElementById('fPrice').value;
+      if (fPrice) trip.price = parseFloat(fPrice);
       trip.distance = calcDistance(trip.fromLat, trip.fromLng, trip.toLat, trip.toLng);
       trip.duration = calcTripDuration(trip.depTime, trip.arrTime, trip.fromCode, trip.toCode);
     } else {
@@ -257,6 +261,8 @@ const Trips = {
       trip.seat = document.getElementById('tSeat').value;
       trip.seatType = document.getElementById('tSeatType').value;
       trip.note = document.getElementById('tNote').value;
+      const tPrice = document.getElementById('tPrice').value;
+      if (tPrice) trip.price = parseFloat(tPrice);
       // 高铁实际运行距离约为直线距离的1.3倍
       trip.distance = Math.round(calcDistance(trip.fromLat, trip.fromLng, trip.toLat, trip.toLng) * 1.3);
       trip.duration = calcTripDuration(trip.depTime, trip.arrTime);
@@ -691,6 +697,7 @@ const Trips = {
       rows.push(['席别', typeMap[t.seatType] || t.seatType]);
     }
     if (t.note) rows.push(['备注', escHtml(t.note)]);
+    if (t.price) rows.push(['票价', '¥' + t.price.toLocaleString()]);
     
     if (rows.length > 0) {
       html += `<div style="margin-bottom:16px">

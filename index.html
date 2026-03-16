@@ -203,6 +203,12 @@
             </select>
           </div>
         </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>票价 (¥)</label>
+            <input type="number" id="fPrice" placeholder="选填" min="0" step="1" inputmode="numeric">
+          </div>
+        </div>
         <div class="form-group">
           <label>备注</label>
           <textarea id="fNote" placeholder="旅途记忆..." rows="2"></textarea>
@@ -259,6 +265,12 @@
             </select>
           </div>
         </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>票价 (¥)</label>
+            <input type="number" id="tPrice" placeholder="选填" min="0" step="1" inputmode="numeric">
+          </div>
+        </div>
         <div class="form-group">
           <label>备注</label>
           <textarea id="tNote" placeholder="旅途记忆..." rows="2"></textarea>
@@ -288,6 +300,7 @@
         <div style="display:flex;gap:8px">
           <button class="btn btn-theme" id="btnThemeDark" style="flex:1">🌙 深色</button>
           <button class="btn btn-theme" id="btnThemeLight" style="flex:1">☀️ 浅色</button>
+          <button class="btn btn-theme" id="btnThemeAuto" style="flex:1">🔄 跟随</button>
         </div>
       </div>
       <div class="settings-section">
