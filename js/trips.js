@@ -54,6 +54,7 @@ const Trips = {
     // Filters
     document.getElementById('filterType').onchange = () => this.render();
     document.getElementById('filterYear').onchange = () => this.render();
+    document.getElementById('filterGroup').onchange = () => this.render();
     document.getElementById('filterSort').onchange = () => this.render();
     
     // Search
@@ -541,6 +542,7 @@ const Trips = {
   render() {
     const type = document.getElementById('filterType').value;
     const yearVal = document.getElementById('filterYear').value;
+    const groupVal = document.getElementById('filterGroup').value;
     const sort = document.getElementById('filterSort').value;
     const searchQuery = (document.getElementById('tripSearch').value || '').trim().toLowerCase();
 
@@ -550,6 +552,14 @@ const Trips = {
     if (type !== 'all') trips = trips.filter(t => t.type === type);
     // Filter by year
     if (yearVal !== 'all') trips = trips.filter(t => getYear(t.date) === parseInt(yearVal));
+    // Filter by group
+    if (groupVal !== 'all') {
+      if (groupVal === 'ungrouped') {
+        trips = trips.filter(t => !t.groupId);
+      } else {
+        trips = trips.filter(t => t.groupId === groupVal);
+      }
+    }
     // Filter by search query (supports pinyin)
     if (searchQuery) {
       trips = trips.filter(t => {
@@ -586,6 +596,23 @@ const Trips = {
       yearSelect.appendChild(opt);
     });
     yearSelect.value = currentYearVal;
+
+    // Update group filter
+    const groupSelect = document.getElementById('filterGroup');
+    const currentGroupVal = groupSelect.value;
+    const groups = Store.getGroups();
+    groupSelect.innerHTML = '<option value="all">全部旅行</option>';
+    if (groups.length > 0) {
+      groups.forEach(g => {
+        const opt = document.createElement('option');
+        opt.value = g.id; opt.textContent = '🏷️ ' + g.name;
+        groupSelect.appendChild(opt);
+      });
+      const ungrouped = document.createElement('option');
+      ungrouped.value = 'ungrouped'; ungrouped.textContent = '未归组';
+      groupSelect.appendChild(ungrouped);
+    }
+    groupSelect.value = currentGroupVal;
 
     const list = document.getElementById('tripList');
     const empty = document.getElementById('emptyTrips');

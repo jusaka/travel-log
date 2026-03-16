@@ -94,7 +94,15 @@ function showUndoToast(msg, trip) {
   _undoTimer = setTimeout(() => { el.classList.remove('show'); el.textContent = ''; _undoTrip = null; }, 6000);
   document.getElementById('btnUndo').onclick = () => {
     if (_undoTrip) {
-      Store.add(_undoTrip);
+      const restoredTrip = Store.add(_undoTrip);
+      // Restore group membership if trip had a groupId
+      if (_undoTrip.groupId) {
+        const group = Store.getGroupById(_undoTrip.groupId);
+        if (group && !group.tripIds.includes(restoredTrip.id)) {
+          group.tripIds.push(restoredTrip.id);
+          Store.save();
+        }
+      }
       _undoTrip = null;
       el.classList.remove('show');
       clearTimeout(_undoTimer);
@@ -155,7 +163,7 @@ function getYear(dateStr) {
   return new Date(dateStr).getFullYear();
 }
 
-// Pinyin syllable mapping for Chinese characters (covers all common city/transport names)
+// Pinyin syllable mapping for Chinese characters (deduplicated, 259 unique chars)
 const _pinyinFull = {
   '北':'bei','京':'jing','上':'shang','海':'hai','广':'guang','州':'zhou','深':'shen','圳':'zhen',
   '天':'tian','津':'jin','重':'chong','庆':'qing','成':'cheng','都':'du','杭':'hang','武':'wu',
@@ -173,40 +181,23 @@ const _pinyinFull = {
   '凤':'feng','凰':'huang','美':'mei','胶':'jiao','水':'shui','子':'zi','双':'shuang','流':'liu',
   '机':'ji','场':'chang','站':'zhan','车':'che','火':'huo','高':'gao','铁':'tie','飞':'fei',
   '行':'xing','旅':'lv','程':'cheng','途':'tu','出':'chu','发':'fa','到':'dao','达':'da',
-  '洛':'luo','阳':'yang','厦':'xia','泰':'tai','淮':'huai','海':'hai','烟':'yan','台':'tai',
-  '威':'wei','海':'hai','潍':'wei','坊':'fang','南':'nan','通':'tong','苏':'su','徐':'xu',
-  '州':'zhou','常':'chang','锡':'xi','无':'wu','湖':'hu','嘉':'jia','兴':'xing','绍':'shao',
-  '宁':'ning','舟':'zhou','山':'shan','金':'jin','义':'yi','乌':'wu','丽':'li','水':'shui',
-  '衢':'qu','温':'wen','台':'tai','丽':'li','杭':'hang','甬':'yong','湘':'xiang','潭':'tan',
-  '株':'zhu','洲':'zhou','衡':'heng','邵':'shao','常':'chang','德':'de','岳':'yue',
-  '益':'yi','怀':'huai','娄':'lou','永':'yong','郴':'chen','湛':'zhan','江':'jiang',
+  '洛':'luo','泰':'tai','淮':'huai','烟':'yan','威':'wei','潍':'wei','坊':'fang','通':'tong',
+  '徐':'xu','常':'chang','湖':'hu','嘉':'jia','兴':'xing','绍':'shao','舟':'zhou','义':'yi',
+  '衢':'qu','甬':'yong','湘':'xiang','潭':'tan','株':'zhu','洲':'zhou','衡':'heng','邵':'shao',
+  '岳':'yue','益':'yi','怀':'huai','娄':'lou','永':'yong','郴':'chen','湛':'zhan',
   '茂':'mao','名':'ming','汕':'shan','头':'tou','揭':'jie','梅':'mei','韶':'shao',
-  '惠':'hui','东':'dong','珠':'zhu','肇':'zhao','清':'qing','云':'yun','江':'jiang',
-  '柳':'liu','桂':'gui','林':'lin','梧':'wu','州':'zhou','百':'bai','色':'se',
-  '贵':'gui','遵':'zun','义':'yi','安':'an','顺':'shun','毕':'bi','节':'jie',
-  '昆':'kun','曲':'qu','靖':'jing','楚':'chu','蒙':'meng','文':'wen','昭':'zhao',
-  '普':'pu','洱':'er','西':'xi','版':'ban','纳':'na','丽':'li','江':'jiang',
-  '成':'cheng','雅':'ya','乐':'le','眉':'mei','宜':'yi','泸':'lu','内':'nei',
-  '遂':'sui','广':'guang','巴':'ba','南':'nan','达':'da','绵':'mian','德':'de',
-  '攀':'pan','枝':'zhi','花':'hua','凉':'liang','山':'shan','甘':'gan','孜':'zi',
-  '阿':'a','坝':'ba','兰':'lan','州':'zhou','天':'tian','水':'shui','武':'wu',
-  '威':'wei','张':'zhang','掖':'ye','酒':'jiu','泉':'quan','敦':'dun','煌':'huang',
-  '嘉':'jia','峪':'yu','关':'guan','白':'bai','银':'yin','庆':'qing','阳':'yang',
-  '定':'ding','西':'xi','陇':'long','南':'nan','临':'lin','夏':'xia','平':'ping',
-  '凉':'liang','西':'xi','宁':'ning','海':'hai','东':'dong','格':'ge','尔':'er',
-  '木':'mu','玉':'yu','树':'shu','果':'guo','洛':'luo','黄':'huang','南':'nan',
-  '海':'hai','西':'xi','都':'du','西':'xi','宁':'ning','拉':'la','萨':'sa',
-  '日':'ri','喀':'ka','则':'ze','那':'na','曲':'qu','昌':'chang','都':'du',
-  '林':'lin','芝':'zhi','阿':'a','里':'li','锡':'xi','林':'lin','浩':'hao',
-  '特':'te','呼':'hu','包':'bao','头':'tou','赤':'chi','峰':'feng','通':'tong',
-  '辽':'liao','沈':'shen','阳':'yang','大':'da','连':'lian','鞍':'an','山':'shan',
-  '抚':'fu','顺':'shun','本':'ben','溪':'xi','丹':'dan','东':'dong','营':'ying',
-  '口':'kou','锦':'jin','州':'zhou','盘':'pan','锦':'jin','朝':'chao','阳':'yang',
-  '葫':'hu','芦':'lu','岛':'dao','铁':'tie','岭':'ling','长':'chang','春':'chun',
-  '吉':'ji','延':'yan','边':'bian','四':'si','平':'ping','白':'bai','城':'cheng',
-  '松':'song','哈':'ha','牡':'mu','丹':'dan','江':'jiang','佳':'jia','木':'mu',
-  '斯':'si','齐':'qi','绥':'sui','化':'hua','黑':'hei','河':'he','双':'shuang',
-  '鸭':'ya','绿':'lv','石':'shi','狮':'shi','子':'zi','山':'shan',
+  '惠':'hui','肇':'zhao','清':'qing','柳':'liu','桂':'gui','林':'lin','梧':'wu','百':'bai','色':'se',
+  '遵':'zun','顺':'shun','毕':'bi','节':'jie','曲':'qu','靖':'jing','楚':'chu','蒙':'meng',
+  '文':'wen','昭':'zhao','普':'pu','版':'ban','纳':'na','雅':'ya','乐':'le','眉':'mei',
+  '宜':'yi','泸':'lu','内':'nei','遂':'sui','巴':'ba','绵':'mian','攀':'pan','枝':'zhi',
+  '凉':'liang','甘':'gan','孜':'zi','阿':'a','坝':'ba','张':'zhang','掖':'ye','酒':'jiu',
+  '敦':'dun','煌':'huang','峪':'yu','关':'guan','定':'ding','陇':'long','临':'lin','夏':'xia',
+  '平':'ping','格':'ge','玉':'yu','树':'shu','果':'guo','日':'ri','喀':'ka','则':'ze',
+  '那':'na','昌':'chang','芝':'zhi','里':'li','包':'bao','赤':'chi','峰':'feng',
+  '辽':'liao','鞍':'an','抚':'fu','本':'ben','溪':'xi','丹':'dan','营':'ying',
+  '锦':'jin','盘':'pan','朝':'chao','葫':'hu','芦':'lu','岭':'ling','春':'chun',
+  '吉':'ji','延':'yan','边':'bian','四':'si','城':'cheng','松':'song','牡':'mu',
+  '佳':'jia','斯':'si','绥':'sui','化':'hua','黑':'hei','鸭':'ya','绿':'lv','狮':'shi',
 };
 
 // Also keep initials for fallback

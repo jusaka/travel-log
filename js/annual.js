@@ -27,6 +27,7 @@ const Annual = {
     const trains = trips.filter(t => t.type === 'train');
     let totalKm = 0, flightKm = 0, trainKm = 0;
     let totalMins = 0;
+    let totalPrice = 0;
     const cities = new Set();
     const airports = new Set();
     const stations = new Set();
@@ -38,6 +39,7 @@ const Annual = {
       const d = t.distance || 0;
       totalKm += d;
       totalMins += t.duration || 0;
+      if (t.price) totalPrice += t.price;
       if (t.fromCity) cities.add(t.fromCity);
       if (t.toCity) cities.add(t.toCity);
       monthSet.add(new Date(t.date).getMonth());
@@ -111,6 +113,10 @@ const Annual = {
           <div class="val">${monthSet.size}</div>
           <div class="label">活跃月份</div>
         </div>
+        ${totalPrice > 0 ? `<div class="annual-stat-box">
+          <div class="val" style="color:var(--danger)">¥${totalPrice.toLocaleString()}</div>
+          <div class="label">交通花费</div>
+        </div>` : ''}
       </div>
     </div>`;
 

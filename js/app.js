@@ -50,7 +50,58 @@
   };
 
   // Settings
-  document.getElementById('btnSettings').onclick = () => openModal('settingsModal');
+  document.getElementById('btnSettings').onclick = () => {
+    _renderGroupList();
+    openModal('settingsModal');
+  };
+
+  function _renderGroupList() {
+    const groups = Store.getGroups();
+    const container = document.getElementById('groupList');
+    if (groups.length === 0) {
+      container.innerHTML = '<div style="color:var(--text3);font-size:12px;padding:8px 0">暂无旅行组，添加行程时可创建</div>';
+      return;
+    }
+    container.innerHTML = groups.map(g => {
+      const tripCount = g.tripIds.length;
+      const trips = g.tripIds.map(id => Store.getById(id)).filter(Boolean);
+      const totalKm = trips.reduce((s, t) => s + (t.distance || 0), 0);
+      const totalPrice = trips.reduce((s, t) => s + (t.price || 0), 0);
+      const dateRange = trips.length > 0 ? 
+        `${fmtDateShort(trips[trips.length-1].date)} ~ ${fmtDateShort(trips[0].date)}` : '';
+      return `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px;background:var(--bg3);border-radius:8px;margin-bottom:6px">
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;font-weight:600">🏷️ ${escHtml(g.name)}</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:2px">${tripCount}次行程 · ${fmtDist(totalKm)}${totalPrice > 0 ? ' · ¥' + totalPrice.toLocaleString() : ''}</div>
+          ${dateRange ? `<div style="font-size:10px;color:var(--text3)">${dateRange}</div>` : ''}
+        </div>
+        <div style="display:flex;gap:4px;flex-shrink:0">
+          <button class="btn-icon" style="min-width:32px;min-height:32px;font-size:14px" onclick="_renameGroup('${g.id}')">✏️</button>
+          <button class="btn-icon" style="min-width:32px;min-height:32px;font-size:14px;color:var(--danger)" onclick="_deleteGroup('${g.id}','${escHtml(g.name)}')">🗑️</button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  // Global group management functions
+  window._renameGroup = (id) => {
+    const group = Store.getGroupById(id);
+    if (!group) return;
+    const name = prompt('修改旅行组名称：', group.name);
+    if (!name || !name.trim()) return;
+    Store.updateGroup(id, { name: name.trim() });
+    _renderGroupList();
+    Trips.render();
+    showToast('已更新');
+  };
+  window._deleteGroup = (id, name) => {
+    showConfirm(`确定删除旅行组「${name}」？\n（行程不会被删除，只是取消分组）`, () => {
+      Store.deleteGroup(id);
+      _renderGroupList();
+      Trips.render();
+      showToast('已删除旅行组');
+    });
+  };
 
   // Theme toggle
   const updateThemeButtons = () => {
@@ -187,7 +238,7 @@
       return;
     }
     // CSV header
-    const headers = ['date','type','fromCity','toCity','fromCode','toCode','fromStation','toStation','flightNo','trainNo','airline','depTime','arrTime','distance','duration','seatClass','seatType','seat','aircraft','note'];
+    const headers = ['date','type','fromCity','toCity','fromCode','toCode','fromStation','toStation','flightNo','trainNo','airline','depTime','arrTime','distance','duration','seatClass','seatType','seat','aircraft','price','groupId','note'];
     const csvRows = [headers.join(',')];
     trips.forEach(t => {
       const row = headers.map(h => {

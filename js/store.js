@@ -348,6 +348,8 @@ const Store = {
       'seatType': 'seatType', '席别': 'seatType',
       'seat': 'seat', '座位': 'seat',
       'note': 'note', '备注': 'note',
+      'price': 'price', '票价': 'price',
+      'groupId': 'groupId',
     };
 
     let added = 0;
@@ -370,9 +372,9 @@ const Store = {
         trip.flightNo = values[3] || '';
       }
 
-      // Parse numeric fields
       if (trip.distance) trip.distance = parseInt(trip.distance) || 0;
       if (trip.duration) trip.duration = parseInt(trip.duration) || 0;
+      if (trip.price) trip.price = parseFloat(trip.price) || 0;
 
       // Try to auto-detect type
       if (!trip.type || trip.type === '') {
