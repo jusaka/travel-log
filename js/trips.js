@@ -118,10 +118,10 @@ const Trips = {
     document.getElementById('btnDeleteTrip').style.display = 'none';
     document.getElementById('btnDuplicateTrip').style.display = 'none';
     this.clearForm();
-    // Default date to today
-    const today = new Date().toISOString().split('T')[0];
-    document.getElementById('fDate').value = today;
-    document.getElementById('tDate').value = today;
+    // Remember last used date, or default to today
+    const lastDate = localStorage.getItem('travellog_lastDate') || new Date().toISOString().split('T')[0];
+    document.getElementById('fDate').value = lastDate;
+    document.getElementById('tDate').value = lastDate;
     openModal('addTripModal');
   },
 
@@ -268,6 +268,7 @@ const Trips = {
       closeModal('addTripModal');
     } else {
       Store.add(trip);
+      localStorage.setItem('travellog_lastDate', trip.date);
       closeModal('addTripModal');
       // Offer return trip
       this._offerReturnTrip(trip);
@@ -378,10 +379,11 @@ const Trips = {
   deleteTrip() {
     if (!this.editingId) return;
     showConfirm('确定删除这条行程？', () => {
+      const trip = Store.getById(this.editingId);
       Store.delete(this.editingId);
       closeModal('addTripModal');
       closeModal('confirmModal');
-      showToast('已删除');
+      showUndoToast('已删除行程', trip);
       this.render();
       TravelMap.draw();
       TravelMap.updateSummary();
@@ -456,9 +458,10 @@ const Trips = {
         }
       } else if (action === 'delete') {
         showConfirm('确定删除这条行程？', () => {
+          const trip = Store.getById(id);
           Store.delete(id);
           closeModal('confirmModal');
-          showToast('已删除');
+          showUndoToast('已删除行程', trip);
           this.render();
           TravelMap.draw();
           TravelMap.updateSummary();
@@ -498,14 +501,16 @@ const Trips = {
     if (type !== 'all') trips = trips.filter(t => t.type === type);
     // Filter by year
     if (yearVal !== 'all') trips = trips.filter(t => getYear(t.date) === parseInt(yearVal));
-    // Filter by search query
+    // Filter by search query (supports pinyin)
     if (searchQuery) {
       trips = trips.filter(t => {
         const searchFields = [
           t.fromCity, t.toCity, t.fromStation, t.toStation,
           t.flightNo, t.trainNo, t.fromCode, t.toCode, t.note
-        ].filter(Boolean).join(' ').toLowerCase();
-        return searchFields.includes(searchQuery);
+        ].filter(Boolean).join(' ');
+        const lower = searchFields.toLowerCase();
+        const pinyin = toPinyinInitials(searchFields);
+        return lower.includes(searchQuery) || pinyin.includes(searchQuery);
       });
     }
     
@@ -542,19 +547,35 @@ const Trips = {
     }
     empty.style.display = 'none';
 
-    list.innerHTML = trips.map(t => {
+    list.innerHTML = '';
+    // Group by month
+    let currentMonth = '';
+    trips.forEach(t => {
+      const ym = t.date ? t.date.substring(0, 7) : '';
+      if (ym && ym !== currentMonth) {
+        currentMonth = ym;
+        const [y, m] = ym.split('-');
+        const monthTrips = trips.filter(tr => tr.date && tr.date.startsWith(ym));
+        const monthKm = monthTrips.reduce((sum, tr) => sum + (tr.distance || 0), 0);
+        const header = document.createElement('div');
+        header.style.cssText = 'display:flex;justify-content:space-between;align-items:baseline;padding:12px 4px 6px;font-size:13px;font-weight:700;color:var(--accent2);border-bottom:1px solid var(--bg3);margin-bottom:4px';
+        header.innerHTML = `<span>${y}年${parseInt(m)}月 <span style="font-weight:400;color:var(--text3);font-size:11px">${monthTrips.length}次</span></span><span style="font-size:11px;color:var(--text3);font-weight:400">${fmtDist(monthKm)}</span>`;
+        list.appendChild(header);
+      }
+
       const isF = t.type === 'flight';
       const typeBadge = isF ? '<span class="trip-type flight">✈️ 飞行</span>' : '<span class="trip-type train">🚄 高铁</span>';
       const no = isF ? (t.flightNo || '') : (t.trainNo || '');
       const dur = t.duration ? fmtDuration(t.duration) : '';
       const dist = t.distance ? fmtDist(t.distance) : '';
-      const timeStr = t.depTime ? t.depTime : '';
-      const detailParts = [no, timeStr, dur].filter(Boolean).join(' · ');
       const fromLabel = isF ? (t.fromCode || t.fromCity || '?') : (t.fromStation || t.fromCity || '?');
       const toLabel = isF ? (t.toCode || t.toCity || '?') : (t.toStation || t.toCity || '?');
       const airline = isF && t.airline ? (AIRLINES[t.airline]?.name || t.airline) : '';
 
-      return `<div class="trip-card ${isF ? 'flight-card' : 'train-card'}" data-id="${t.id}">
+      const card = document.createElement('div');
+      card.className = `trip-card ${isF ? 'flight-card' : 'train-card'}`;
+      card.dataset.id = t.id;
+      card.innerHTML = `
         <div class="trip-card-header">
           <span class="trip-date">${fmtDate(t.date)}</span>
           ${typeBadge}
@@ -577,9 +598,9 @@ const Trips = {
         <div style="display:flex;justify-content:space-between;align-items:center;padding-top:8px;border-top:1px solid var(--bg3)">
           <div style="font-size:12px;color:var(--text3)">${highlight([no, airline].filter(Boolean).join(' · '))}</div>
           ${dist ? `<span class="trip-km">${dist}</span>` : ''}
-        </div>
-      </div>`;
-    }).join('');
+        </div>`;
+      list.appendChild(card);
+    });
 
     // Click to edit
     list.querySelectorAll('.trip-card').forEach(card => {

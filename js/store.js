@@ -17,7 +17,18 @@ const Store = {
   },
 
   save() {
-    localStorage.setItem(STORE_KEY, JSON.stringify(this._trips));
+    const data = JSON.stringify(this._trips);
+    try {
+      localStorage.setItem(STORE_KEY, data);
+    } catch(e) {
+      showToast('⚠️ 存储空间不足，请导出备份数据！');
+      return;
+    }
+    // Warn if approaching localStorage limit (>4MB of ~5MB)
+    const usedBytes = new Blob([data]).size;
+    if (usedBytes > 4 * 1024 * 1024) {
+      showToast('⚠️ 数据量已接近上限，建议导出备份');
+    }
   },
 
   getAll() { return this._trips; },
