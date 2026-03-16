@@ -319,14 +319,16 @@ const TravelMap = {
       ctx.setLineDash([]);
     });
 
-    // Draw flight routes - deduplicate, thicker = more frequent
-    const drawnFlightRoutes = new Set();
+    // Draw flight routes - each direction gets its own arc (left-side bend)
+    // A→B bends left of A→B direction, B→A bends left of B→A direction
+    // This creates a "leaf" shape for round trips
+    const drawnFlightDirs = new Set(); // Track directed routes (not merged)
     flights.forEach(f => {
       const a = `${f.fromLat.toFixed(2)},${f.fromLng.toFixed(2)}`;
       const b = `${f.toLat.toFixed(2)},${f.toLng.toFixed(2)}`;
-      const key = a < b ? `${a}-${b}` : `${b}-${a}`;
-      if (drawnFlightRoutes.has(key)) return;
-      drawnFlightRoutes.add(key);
+      const dirKey = `${a}->${b}`; // Directed key (A→B ≠ B→A)
+      if (drawnFlightDirs.has(dirKey)) return;
+      drawnFlightDirs.add(dirKey);
 
       const [x1, y1] = this.project(f.fromLat, f.fromLng);
       const [x2, y2] = this.project(f.toLat, f.toLng);
@@ -336,8 +338,9 @@ const TravelMap = {
       const mx = (x1 + x2) / 2;
       const my = (y1 + y2) / 2;
       const dist = Math.hypot(x2 - x1, y2 - y1);
-      const arcH = dist * 0.22;
+      const arcH = dist * 0.18;
       const angle = Math.atan2(y2 - y1, x2 - x1);
+      // Always bend to the LEFT of travel direction
       const cpx = mx - arcH * Math.sin(angle);
       const cpy = my + arcH * Math.cos(angle);
 
@@ -362,21 +365,25 @@ const TravelMap = {
       ctx.lineWidth = lw;
       ctx.stroke();
 
-      // Frequency badge for hot routes
-      if (freq >= 4 && dist > 40) {
+      // Frequency badge for hot routes (use undirected freq, show on first direction drawn)
+      const undirKey = a < b ? `${a}-${b}` : `${b}-${a}`;
+      if (freq >= 4 && dist > 40 && !this._freqBadgeDrawn?.has(undirKey)) {
+        if (!this._freqBadgeDrawn) this._freqBadgeDrawn = new Set();
+        this._freqBadgeDrawn.add(undirKey);
         const badgeT = 0.5;
-        const bx = (1-badgeT)*(1-badgeT)*x1 + 2*(1-badgeT)*badgeT*cpx + badgeT*badgeT*x2;
+        const bx = (1-badgeT)*(1-badgeT)*x1 + 2*(1-badgeT)*badgeT*cpx + badgeT*badgeT*y2;
         const by = (1-badgeT)*(1-badgeT)*y1 + 2*(1-badgeT)*badgeT*cpy + badgeT*badgeT*y2;
+        // Place badge between the two arcs (at midpoint, no arc offset)
         ctx.save();
         ctx.beginPath();
-        ctx.arc(bx, by, 8, 0, Math.PI*2);
+        ctx.arc(mx, my, 8, 0, Math.PI*2);
         ctx.fillStyle = 'rgba(245,158,11,0.9)';
         ctx.fill();
         ctx.font = 'bold 9px -apple-system, sans-serif';
         ctx.fillStyle = '#000';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText(freq + '', bx, by);
+        ctx.fillText(freq + '', mx, my);
         ctx.restore();
       }
 
@@ -398,30 +405,30 @@ const TravelMap = {
         ctx.fill();
       }
     });
+    this._freqBadgeDrawn = null; // Reset for next frame
 
-    // Draw animated plane icons on DEDUPLICATED flight routes
-    // Must use same key logic as route drawing to match curve direction
+    // Draw animated plane icons on directed flight routes
+    // Each direction gets its own plane on its own arc
     const phase = this._animPhase;
-    const drawnPlaneRoutes = new Set();
+    const drawnPlaneDirs = new Set();
     let planeIdx = 0;
     flights.forEach(f => {
       const a = `${f.fromLat.toFixed(2)},${f.fromLng.toFixed(2)}`;
       const b = `${f.toLat.toFixed(2)},${f.toLng.toFixed(2)}`;
-      const key = a < b ? `${a}-${b}` : `${b}-${a}`;
-      if (drawnPlaneRoutes.has(key)) return;
-      drawnPlaneRoutes.add(key);
+      const dirKey = `${a}->${b}`;
+      if (drawnPlaneDirs.has(dirKey)) return;
+      drawnPlaneDirs.add(dirKey);
 
-      // Use consistent point order (same as route drawing: always use the trip's own from→to
-      // but we need the FIRST trip that defined this key to get consistent direction)
       const [x1, y1] = this.project(f.fromLat, f.fromLng);
       const [x2, y2] = this.project(f.toLat, f.toLng);
       const dist = Math.hypot(x2 - x1, y2 - y1);
       if (dist < 20) { planeIdx++; return; }
 
-      const arcH = dist * 0.22;
+      const arcH = dist * 0.18;
       const angle = Math.atan2(y2 - y1, x2 - x1);
       const mx = (x1 + x2) / 2;
       const my = (y1 + y2) / 2;
+      // Same left-bend as the route arc
       const cpx = mx - arcH * Math.sin(angle);
       const cpy = my + arcH * Math.cos(angle);
 
