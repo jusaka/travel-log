@@ -22,7 +22,7 @@ const TravelMap = {
     this.bindEvents();
     window.addEventListener('resize', () => this.resize());
     // Load geo data
-    fetch('/data/world.json')
+    fetch('data/world.json')
       .then(r => r.json())
       .then(d => { this.geoData = d; this.draw(); })
       .catch(() => { /* no geo data */ });
