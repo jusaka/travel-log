@@ -634,16 +634,29 @@ const Annual = {
     const fctx = finalCanvas.getContext('2d');
     fctx.drawImage(canvas, 0, 0);
 
-    // Convert to blob and download
+    // Convert to blob and share/download
     finalCanvas.toBlob(blob => {
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `旅途纵横-${this.year}年报.png`;
-      a.click();
-      URL.revokeObjectURL(url);
-      showToast('分享图片已生成 📸');
+      const file = new File([blob], `旅途纵横-${this.year}年报.png`, { type: 'image/png' });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        navigator.share({
+          title: `我的${this.year}年旅行报告`,
+          text: `${this.year}年 · ${trips.length}次出行 · ${fmtDist(totalKm)} · 到访${cities.size}个城市`,
+          files: [file]
+        }).then(() => showToast('📤 已分享！'))
+          .catch(e => { if (e.name !== 'AbortError') this._downloadBlob(blob, this.year); });
+      } else {
+        this._downloadBlob(blob, this.year);
+      }
     }, 'image/png');
+  },
+
+  _downloadBlob(blob, year) {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `旅途纵横-${year}年报.png`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+    showToast('📤 年报图片已保存');
   },
 
   _getAchievements(trips, flights, trains, totalKm, cities, airports) {

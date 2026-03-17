@@ -955,65 +955,121 @@ const TravelMap = {
   },
 
   shareMap() {
-    const canvas = this.canvas;
     const trips = Store.getAll();
     if (trips.length === 0) { showToast('还没有行程数据哦'); return; }
-    
-    const flights = trips.filter(t => t.type === 'flight');
-    const trains = trips.filter(t => t.type === 'train');
-    const cities = new Set();
-    trips.forEach(t => { if (t.fromCity) cities.add(t.fromCity); if (t.toCity) cities.add(t.toCity); });
-    const totalKm = trips.reduce((s, t) => s + (t.distance || 0), 0);
-    
-    // Create share canvas
-    const dpr = window.devicePixelRatio || 2;
-    const W = 390, H = 520;
-    const sc = document.createElement('canvas');
-    sc.width = W * dpr;
-    sc.height = H * dpr;
-    const ctx = sc.getContext('2d');
-    ctx.scale(dpr, dpr);
-    
-    // Background
-    ctx.fillStyle = '#0a0f1a';
-    ctx.fillRect(0, 0, W, H);
-    
-    // Draw map from existing canvas
-    const mapH = 320;
-    ctx.drawImage(canvas, 0, 0, canvas.width, canvas.height, 10, 10, W - 20, mapH);
-    
-    // Stats bar
-    const sy = mapH + 20;
-    ctx.fillStyle = '#1e293b';
-    ctx.beginPath();
-    ctx.roundRect(16, sy, W - 32, 70, 12);
-    ctx.fill();
-    
-    ctx.fillStyle = '#f59e0b';
-    ctx.font = 'bold 22px -apple-system, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText(fmtDist(totalKm), W / 2, sy + 28);
-    
-    ctx.fillStyle = '#94a3b8';
-    ctx.font = '12px -apple-system, sans-serif';
-    ctx.fillText(flights.length + ' 次飞行 · ' + trains.length + ' 次高铁 · ' + cities.size + ' 个城市', W / 2, sy + 50);
-    
-    // Footer
-    ctx.fillStyle = '#f59e0b';
-    ctx.font = 'bold 13px -apple-system, sans-serif';
-    ctx.fillText('旅途纵横', W / 2, sy + 90);
-    ctx.fillStyle = '#4b5563';
-    ctx.font = '10px -apple-system, sans-serif';
-    ctx.fillText('jusaka.github.io/travel-log', W / 2, sy + 106);
-    
-    sc.toBlob(blob => {
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = '旅途纵横-足迹地图.png';
-      a.click();
-      URL.revokeObjectURL(url);
-      showToast('足迹地图已保存 📸');
-    }, 'image/png');
+    showToast('📤 生成中...');
+
+    setTimeout(() => {
+      const flights = trips.filter(t => t.type === 'flight');
+      const trains = trips.filter(t => t.type === 'train');
+      const cities = new Set();
+      trips.forEach(t => { if (t.fromCity) cities.add(t.fromCity); if (t.toCity) cities.add(t.toCity); });
+      const totalKm = trips.reduce((s, t) => s + (t.distance || 0), 0);
+
+      // High-res share card
+      const W = 800, H = 1000;
+      const sc = document.createElement('canvas');
+      sc.width = W; sc.height = H;
+      const ctx = sc.getContext('2d');
+
+      // Background
+      ctx.fillStyle = '#0a0f1a';
+      ctx.fillRect(0, 0, W, H);
+      // Border
+      ctx.strokeStyle = 'rgba(245,158,11,0.3)';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(20, 20, W - 40, H - 40);
+
+      // Title
+      ctx.fillStyle = '#f59e0b';
+      ctx.font = 'bold 32px -apple-system, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('✈️ 我的旅行足迹', W / 2, 70);
+
+      // Draw map area — re-render from data
+      const mapY = 100, mapH = 550;
+      // Draw the existing canvas scaled into the card
+      ctx.drawImage(this.canvas, 0, 0, this.canvas.width, this.canvas.height, 40, mapY, W - 80, mapH);
+
+      // Stats section
+      const sy = mapY + mapH + 30;
+
+      // Main stat - total distance
+      ctx.fillStyle = '#f59e0b';
+      ctx.font = 'bold 48px -apple-system, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(fmtDist(totalKm), W / 2, sy);
+
+      // Sub stats
+      ctx.fillStyle = '#94a3b8';
+      ctx.font = '20px -apple-system, sans-serif';
+      ctx.fillText(flights.length + ' 次飞行 · ' + trains.length + ' 次高铁 · ' + cities.size + ' 个城市', W / 2, sy + 35);
+
+      // Fun facts
+      const earthCircum = 40075;
+      const earthPct = (totalKm / earthCircum * 100).toFixed(1);
+      const moonDist = 384400;
+      const moonPct = (totalKm / moonDist * 100).toFixed(1);
+
+      // Rank system
+      let rank;
+      if (totalKm === 0) rank = '🏠 家里蹲';
+      else if (totalKm < 2000) rank = '🚶 初出茅庐';
+      else if (totalKm < 5000) rank = '🎒 小试牛刀';
+      else if (totalKm < 10000) rank = '🚄 常旅之人';
+      else if (totalKm < 20000) rank = '✈️ 空中飞人';
+      else if (totalKm < 40000) rank = '🌍 半个地球';
+      else if (totalKm < 80000) rank = '🌏 环球旅者';
+      else if (totalKm < 200000) rank = '🚀 星际起步';
+      else rank = '👑 旅行之王';
+
+      ctx.fillStyle = '#e2e8f0';
+      ctx.font = 'bold 26px -apple-system, sans-serif';
+      ctx.fillText(rank, W / 2, sy + 80);
+
+      ctx.fillStyle = '#64748b';
+      ctx.font = '16px -apple-system, sans-serif';
+      ctx.fillText('绕地球 ' + earthPct + '% · 到月球 ' + moonPct + '%', W / 2, sy + 112);
+
+      // Progress bar - earth circumference
+      const barX = 120, barW = W - 240, barY = sy + 130;
+      ctx.fillStyle = '#1e293b';
+      ctx.beginPath(); ctx.roundRect(barX, barY, barW, 10, 5); ctx.fill();
+      ctx.fillStyle = '#f59e0b';
+      const pct = Math.min(totalKm / earthCircum, 1);
+      ctx.beginPath(); ctx.roundRect(barX, barY, barW * pct, 10, 5); ctx.fill();
+
+      // Footer
+      ctx.fillStyle = '#f59e0b';
+      ctx.font = 'bold 16px -apple-system, sans-serif';
+      ctx.fillText('旅途纵横 · TravelLog', W / 2, H - 60);
+      ctx.fillStyle = '#4b5563';
+      ctx.font = '13px -apple-system, sans-serif';
+      ctx.fillText('jusaka.github.io/travel-log', W / 2, H - 38);
+
+      // Export with Web Share API support
+      sc.toBlob(blob => {
+        const file = new File([blob], 'travel-log-map.png', { type: 'image/png' });
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          navigator.share({
+            title: '我的旅行足迹',
+            text: flights.length + '次飞行 · ' + trains.length + '次高铁 · ' + fmtDist(totalKm) + ' · ' + rank,
+            files: [file]
+          }).then(() => showToast('📤 已分享！'))
+            .catch(e => { if (e.name !== 'AbortError') this._downloadBlob(blob); });
+        } else {
+          this._downloadBlob(blob);
+        }
+      }, 'image/png');
+    }, 100);
+  },
+
+  _downloadBlob(blob) {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = '旅途纵横-足迹地图-' + new Date().toISOString().slice(0, 10) + '.png';
+    a.click();
+    URL.revokeObjectURL(a.href);
+    showToast('📤 图片已保存');
   },
 };
