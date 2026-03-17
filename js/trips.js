@@ -483,17 +483,15 @@ const Trips = {
 
   deleteTrip() {
     if (!this.editingId) return;
-    showConfirm('确定删除这条行程？', () => {
-      const trip = Store.getById(this.editingId);
-      Store.delete(this.editingId);
-      closeModal('addTripModal');
-      closeModal('confirmModal');
-      showUndoToast('已删除行程', trip);
-      this.render();
-      TravelMap.draw();
-      TravelMap.updateSummary();
-      Stats.render();
-    });
+    const trip = Store.getById(this.editingId);
+    Store.delete(this.editingId);
+    closeModal('addTripModal');
+    this.render();
+    TravelMap.draw();
+    TravelMap.updateSummary();
+    Stats.render();
+    Annual.render();
+    showUndoToast('已删除行程', trip);
   },
 
   duplicateTrip() {
@@ -562,16 +560,14 @@ const Trips = {
           Annual.render();
         }
       } else if (action === 'delete') {
-        showConfirm('确定删除这条行程？', () => {
-          const trip = Store.getById(id);
-          Store.delete(id);
-          closeModal('confirmModal');
-          showUndoToast('已删除行程', trip);
-          this.render();
-          TravelMap.draw();
-          TravelMap.updateSummary();
-          Stats.render();
-        });
+        const trip = Store.getById(id);
+        Store.delete(id);
+        showUndoToast('已删除行程', trip);
+        this.render();
+        TravelMap.draw();
+        TravelMap.updateSummary();
+        Stats.render();
+        Annual.render();
       }
     };
     // Remove previous listener, add new one
@@ -865,18 +861,15 @@ const Trips = {
     
     // Delete button in detail modal
     document.getElementById('btnDeleteFromDetail').onclick = () => {
-      showConfirm('确定删除这条行程？', () => {
-        const tripData = Store.getById(id);
-        Store.delete(id);
-        closeModal('confirmModal');
-        closeModal('tripDetailModal');
-        showUndoToast('已删除行程', tripData);
-        this.render();
-        TravelMap.draw();
-        TravelMap.updateSummary();
-        Stats.render();
-        Annual.render();
-      });
+      const tripData = Store.getById(id);
+      Store.delete(id);
+      closeModal('tripDetailModal');
+      showUndoToast('已删除行程', tripData);
+      this.render();
+      TravelMap.draw();
+      TravelMap.updateSummary();
+      Stats.render();
+      Annual.render();
     };
 
     // Edit button — openModal inside openEdit auto-closes tripDetailModal (mutual exclusion)

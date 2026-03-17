@@ -88,6 +88,7 @@
     _renderGroupList();
     _updateBackupTime();
     _checkBackupReminder();
+    _updateDataOverview();
     openModal('settingsModal');
   };
 
@@ -102,6 +103,17 @@
     } else {
       reminder.style.display = 'none';
     }
+  }
+
+  function _updateDataOverview() {
+    const el = document.getElementById('dataOverviewText');
+    if (!el) return;
+    const trips = Store.getAll();
+    const groups = Store.getGroups();
+    const dataSize = (new Blob([localStorage.getItem('travellog_trips') || '']).size / 1024).toFixed(1);
+    const parts = [trips.length + ' 条行程'];
+    if (groups.length > 0) parts.push(groups.length + ' 个旅行组');
+    el.innerHTML = parts.join(' · ') + '<br><span style="font-size:11px;color:var(--text3)">数据大小: ' + dataSize + ' KB</span>';
   }
 
   function _renderGroupList() {

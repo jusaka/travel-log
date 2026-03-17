@@ -324,7 +324,15 @@ textarea{resize:none;font-family:inherit}
 /* ===== P1 Enhancements ===== */
 /* P1-1: Light mode card shadow */
 .light .trip-card {
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.08);
+}
+
+/* P1-1b: Light mode tab nav glass effect */
+.light #tabNav {
+  background: rgba(245,245,247,0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-top: 1px solid rgba(0,0,0,0.06);
 }
 
 /* P1-2: Placeholder brightness */
