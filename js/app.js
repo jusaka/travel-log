@@ -477,7 +477,7 @@
         Stats.render();
         Annual.render();
       } catch(e) {
-        showToast('导入失败：' + e.message);
+        showToast('导入失败：' + e.message, 4000);
       }
     } else {
       Trips.saveTrip();

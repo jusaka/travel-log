@@ -234,13 +234,16 @@ const Trips = {
   saveTrip() {
     let trip = { type: this.currentType };
 
+    // Clear previous validation errors
+    document.querySelectorAll('.form-error').forEach(el => el.classList.remove('form-error'));
+
     if (this.currentType === 'flight') {
       const date = document.getElementById('fDate').value;
       const fromEl = document.getElementById('fFrom');
       const toEl = document.getElementById('fTo');
-      if (!date) { showToast('请选择日期'); return; }
-      if (!fromEl.dataset.lat) { showToast('请选择出发机场'); return; }
-      if (!toEl.dataset.lat) { showToast('请选择到达机场'); return; }
+      if (!date) { document.getElementById('fDate').classList.add('form-error'); showToast('⚠️ 请选择日期', 3000); return; }
+      if (!fromEl.dataset.lat) { fromEl.classList.add('form-error'); showToast('⚠️ 请选择出发机场', 3000); return; }
+      if (!toEl.dataset.lat) { toEl.classList.add('form-error'); showToast('⚠️ 请选择到达机场', 3000); return; }
 
       trip.date = date;
       trip.flightNo = document.getElementById('fFlightNo').value.toUpperCase();
@@ -267,9 +270,9 @@ const Trips = {
       const date = document.getElementById('tDate').value;
       const fromEl = document.getElementById('tFrom');
       const toEl = document.getElementById('tTo');
-      if (!date) { showToast('请选择日期'); return; }
-      if (!fromEl.dataset.lat) { showToast('请选择出发站'); return; }
-      if (!toEl.dataset.lat) { showToast('请选择到达站'); return; }
+      if (!date) { document.getElementById('tDate').classList.add('form-error'); showToast('⚠️ 请选择日期', 3000); return; }
+      if (!fromEl.dataset.lat) { fromEl.classList.add('form-error'); showToast('⚠️ 请选择出发站', 3000); return; }
+      if (!toEl.dataset.lat) { toEl.classList.add('form-error'); showToast('⚠️ 请选择到达站', 3000); return; }
 
       trip.date = date;
       trip.trainNo = document.getElementById('tTrainNo').value.toUpperCase();
@@ -629,9 +632,17 @@ const Trips = {
 
     const list = document.getElementById('tripList');
     const empty = document.getElementById('emptyTrips');
+    const allTrips = Store.getTrips();
 
     if (trips.length === 0) {
       list.innerHTML = '';
+      if (allTrips.length === 0) {
+        // 真正无数据 — 显示引导空态
+        empty.innerHTML = '<div class="empty-icon">✈️</div><div class="empty-text">开启你的旅程</div><div class="empty-sub">记录每一次飞行和铁路旅行<br>构建你的专属足迹地图</div><button class="btn btn-primary" style="margin-top:20px" onclick="Trips.openAdd()">📝 添加第一条行程</button>';
+      } else {
+        // 搜索/筛选无结果 — 显示搜索空态
+        empty.innerHTML = '<div class="empty-icon">🔍</div><div class="empty-text">未找到匹配的行程</div><div class="empty-sub">试试其他关键词或调整筛选条件</div>';
+      }
       empty.style.display = '';
       return;
     }
