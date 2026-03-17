@@ -605,7 +605,7 @@ const TravelMap = {
     // Calculate scale: 1 degree of longitude at current center lat
     const cosLat = Math.cos(this.centerLat * Math.PI / 180);
     const kmPerDeg = 111.32 * cosLat; // km per degree longitude at this latitude
-    const pixPerKm = this.scale / kmPerDeg * (1 / (window.devicePixelRatio || 1));
+    const pixPerKm = this.scale / kmPerDeg;
     // Find a nice round distance that fits ~60-120px
     const niceDistances = [50, 100, 200, 500, 1000, 2000, 5000];
     let dist = 100, barPx = 60;
