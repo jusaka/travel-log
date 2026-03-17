@@ -604,14 +604,27 @@ const Annual = {
     // ===== FOOTER =====
     curY += 35;
     drawDivider(curY);
-    curY += 20;
-    ctx.fillStyle = '#4b5563';
-    ctx.font = '10px -apple-system, sans-serif';
+    curY += 24;
+    
+    // Brand footer with URL
+    ctx.fillStyle = '#1e293b';
+    ctx.beginPath();
+    ctx.roundRect(28, curY - 8, W - 56, 60, 12);
+    ctx.fill();
+    
+    ctx.fillStyle = '#f59e0b';
+    ctx.font = 'bold 14px -apple-system, sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('旅途纵横 · 记录每一次出发', W / 2, curY);
-    curY += 14;
+    ctx.fillText('✈️ 旅途纵横 · 记录每一次出发', W / 2, curY + 14);
+    
+    ctx.fillStyle = '#64748b';
+    ctx.font = '11px -apple-system, sans-serif';
+    ctx.fillText('jusaka.github.io/travel-log', W / 2, curY + 34);
+    
+    curY += 60;
     ctx.fillStyle = '#374151';
-    ctx.fillText(`生成于 ${new Date().toISOString().split('T')[0]}`, W / 2, curY);
+    ctx.font = '9px -apple-system, sans-serif';
+    ctx.fillText(`生成于 ${new Date().toISOString().split('T')[0]}`, W / 2, curY + 4);
 
     // ===== CROP to actual content height =====
     const finalH = Math.min(curY + 20, H);
