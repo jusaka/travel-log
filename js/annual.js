@@ -638,9 +638,19 @@ const Annual = {
     const a = this._cachedAchievements[idx];
     if (!a || !a.unlocked) return;
 
+    // Gather context data
+    const trips = Store.getByYear(this.year);
+    const flights = trips.filter(t => t.type === 'flight');
+    const trains = trips.filter(t => t.type === 'train');
+    const totalKm = trips.reduce((s, t) => s + (t.distance || 0), 0);
+    const cities = new Set();
+    trips.forEach(t => { if (t.fromCity) cities.add(t.fromCity); if (t.toCity) cities.add(t.toCity); });
+    const unlocked = this._cachedAchievements.filter(x => x.unlocked).length;
+    const total = this._cachedAchievements.length;
+
     const dpr = 2;
     const W = 600;
-    const H = 400;
+    const H = 700;
     const canvas = document.createElement('canvas');
     canvas.width = W * dpr;
     canvas.height = H * dpr;
@@ -655,22 +665,27 @@ const Annual = {
     ctx.fillStyle = bg;
     ctx.fillRect(0, 0, W, H);
 
+    // Border
+    ctx.strokeStyle = 'rgba(245,158,11,0.2)';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(16, 16, W - 32, H - 32);
+
     // Decorative glow
     ctx.globalAlpha = 0.08;
     ctx.beginPath();
-    ctx.arc(W / 2, H / 2 - 30, 160, 0, Math.PI * 2);
+    ctx.arc(W / 2, 180, 120, 0, Math.PI * 2);
     ctx.fillStyle = '#fbbf24';
     ctx.fill();
-    ctx.globalAlpha = 0.05;
+    ctx.globalAlpha = 0.04;
     ctx.beginPath();
-    ctx.arc(W / 2, H / 2 - 30, 220, 0, Math.PI * 2);
+    ctx.arc(W / 2, 180, 180, 0, Math.PI * 2);
     ctx.fillStyle = '#f59e0b';
     ctx.fill();
     ctx.globalAlpha = 1;
 
     // Stars
-    ctx.globalAlpha = 0.3;
-    for (let i = 0; i < 30; i++) {
+    ctx.globalAlpha = 0.25;
+    for (let i = 0; i < 40; i++) {
       const sx = Math.random() * W, sy = Math.random() * H;
       ctx.beginPath();
       ctx.arc(sx, sy, 0.5 + Math.random() * 1, 0, Math.PI * 2);
@@ -679,10 +694,16 @@ const Annual = {
     }
     ctx.globalAlpha = 1;
 
-    // Badge circle background
+    // Year header
+    ctx.fillStyle = '#64748b';
+    ctx.font = '14px -apple-system, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(this.year + '年度成就', W / 2, 56);
+
+    // Badge circle
     ctx.beginPath();
-    ctx.arc(W / 2, 130, 60, 0, Math.PI * 2);
-    const circleGrad = ctx.createRadialGradient(W / 2, 130, 10, W / 2, 130, 60);
+    ctx.arc(W / 2, 170, 65, 0, Math.PI * 2);
+    const circleGrad = ctx.createRadialGradient(W / 2, 170, 10, W / 2, 170, 65);
     circleGrad.addColorStop(0, 'rgba(251,191,36,0.25)');
     circleGrad.addColorStop(1, 'rgba(251,191,36,0.05)');
     ctx.fillStyle = circleGrad;
@@ -693,48 +714,76 @@ const Annual = {
 
     // Emoji icon
     ctx.font = '56px -apple-system, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText(a.icon, W / 2, 152);
+    ctx.fillText(a.icon, W / 2, 192);
 
     // Achievement name
     ctx.fillStyle = '#fbbf24';
     ctx.font = 'bold 28px -apple-system, sans-serif';
-    ctx.fillText(a.name, W / 2, 230);
+    ctx.fillText(a.name, W / 2, 280);
 
     // Description
     ctx.fillStyle = '#9ca3af';
-    ctx.font = '16px -apple-system, sans-serif';
-    ctx.fillText(a.desc, W / 2, 262);
+    ctx.font = '15px -apple-system, sans-serif';
+    ctx.fillText(a.desc, W / 2, 310);
 
-    // Unlocked status
+    // Unlocked badge
+    ctx.fillStyle = '#1e293b';
+    ctx.beginPath();
+    ctx.roundRect(W / 2 - 60, 330, 120, 32, 16);
+    ctx.fill();
     ctx.fillStyle = '#34d399';
     ctx.font = 'bold 14px -apple-system, sans-serif';
-    ctx.fillText('✅ 已解锁', W / 2, 296);
+    ctx.fillText('✅ 已解锁', W / 2, 352);
 
     // Divider
-    const dg = ctx.createLinearGradient(100, 0, W - 100, 0);
+    const dg = ctx.createLinearGradient(60, 0, W - 60, 0);
     dg.addColorStop(0, 'transparent');
-    dg.addColorStop(0.5, 'rgba(251,191,36,0.4)');
+    dg.addColorStop(0.5, 'rgba(251,191,36,0.3)');
     dg.addColorStop(1, 'transparent');
     ctx.strokeStyle = dg;
     ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.moveTo(100, 318);
-    ctx.lineTo(W - 100, 318);
+    ctx.moveTo(60, 385);
+    ctx.lineTo(W - 60, 385);
     ctx.stroke();
 
+    // Year stats context (2×2 grid)
+    const gridY = 410;
+    const gridData = [
+      { val: flights.length + '次', label: '飞行' },
+      { val: trains.length + '次', label: '高铁' },
+      { val: cities.size + '个', label: '城市' },
+      { val: unlocked + '/' + total, label: '成就' },
+    ];
+    gridData.forEach((item, i) => {
+      const gx = (i % 2 === 0) ? W / 4 : W * 3 / 4;
+      const gy = gridY + Math.floor(i / 2) * 60;
+      ctx.fillStyle = '#e2e8f0';
+      ctx.font = 'bold 22px -apple-system, sans-serif';
+      ctx.fillText(item.val, gx, gy);
+      ctx.fillStyle = '#64748b';
+      ctx.font = '12px -apple-system, sans-serif';
+      ctx.fillText(item.label, gx, gy + 18);
+    });
+
+    // Progress bar for achievements
+    const barY = gridY + 130;
+    ctx.fillStyle = '#64748b';
+    ctx.font = '12px -apple-system, sans-serif';
+    ctx.fillText('成就进度 ' + unlocked + '/' + total, W / 2, barY - 8);
+    const barX = 80, barW = W - 160;
+    ctx.fillStyle = '#1e293b';
+    ctx.beginPath(); ctx.roundRect(barX, barY, barW, 8, 4); ctx.fill();
+    ctx.fillStyle = '#fbbf24';
+    const pct = unlocked / Math.max(total, 1);
+    ctx.beginPath(); ctx.roundRect(barX, barY, Math.max(barW * pct, 8), 8, 4); ctx.fill();
+
     // Footer with QR
-    drawShareQR(ctx, W - 80, 310, 70);
-    ctx.fillStyle = '#f59e0b';
-    ctx.font = 'bold 13px -apple-system, sans-serif';
-    ctx.textAlign = 'left';
-    ctx.fillText('旅途纵横', 30, 340);
-    ctx.fillStyle = '#4b5563';
-    ctx.font = '11px -apple-system, sans-serif';
-    ctx.fillText(SHARE_URL, 30, 360);
+    const footerY = barY + 30;
+    drawShareFooter(ctx, W, footerY, 70);
 
     canvas.toBlob(blob => {
-      showSharePreview(blob, `旅途纵横-成就-${a.name}.png`, `我解锁了「${a.name}」成就！`, `${a.icon} ${a.name} - ${a.desc}`);
+      showSharePreview(blob, `旅途纵横-成就-${a.name}.png`, `我解锁了「${a.name}」成就！`, `${a.icon} ${a.name} - ${a.desc} | ${this.year}年 ${unlocked}/${total}成就`);
     }, 'image/png');
   },
 

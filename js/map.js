@@ -959,6 +959,13 @@ const TravelMap = {
     if (trips.length === 0) { showToast('还没有行程数据哦'); return; }
     showToast('📤 生成中...');
 
+    // Force dark mode for map rendering (share images should always be dark)
+    const wasLight = document.documentElement.classList.contains('light');
+    if (wasLight) {
+      document.documentElement.classList.remove('light');
+      this.draw(); // Re-render map in dark mode
+    }
+
     setTimeout(() => {
       const flights = trips.filter(t => t.type === 'flight');
       const trains = trips.filter(t => t.type === 'train');
@@ -1137,6 +1144,11 @@ const TravelMap = {
       fctx.drawImage(sc, 0, 0);
 
       finalCanvas.toBlob(blob => {
+        // Restore theme if needed
+        if (wasLight) {
+          document.documentElement.classList.add('light');
+          this.draw();
+        }
         const filename = '旅途纵横-足迹地图-' + new Date().toISOString().slice(0, 10) + '.png';
         const text = flights.length + '次飞行 · ' + trains.length + '次高铁 · ' + fmtDist(totalKm) + ' · ' + rank;
         showSharePreview(blob, filename, '我的旅行足迹', text);
