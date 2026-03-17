@@ -544,19 +544,24 @@ const TravelMap = {
       // City label - collect for smart placement later
       if (ep.city && (zoom >= 1.0 || ep.count >= 2)) {
         const fontSize = Math.round(9 + Math.min(ep.count, 3) + (zoom > 1.5 ? 2 : 0));
-        labelsToDraw.push({ x, y: y - r - 5, text: ep.city, fontSize, color: hasFlight ? '#fbbf24' : '#34d399', r });
+        labelsToDraw.push({ x, y: y - r - 5, text: ep.city, fontSize, color: hasFlight ? '#fbbf24' : '#34d399', r, count: ep.count });
       }
     });
 
-    // Smart label placement - avoid overlaps
+    // Smart label placement - avoid overlaps with priority
     const labelRects = [];
+
+    // Sort labels by count (higher count = higher priority, drawn first)
+    labelsToDraw.sort((a, b) => b.count - a.count);
 
     // Draw scale bar
     this._drawScaleBar(ctx, W, H, isLight);
     labelsToDraw.forEach(label => {
-      ctx.font = `bold ${label.fontSize}px -apple-system, sans-serif`;
+      // Use smaller font to reduce overlaps
+      const fontSize = Math.max(10, label.fontSize - 1);
+      ctx.font = `bold ${fontSize}px -apple-system, sans-serif`;
       const tw = ctx.measureText(label.text).width;
-      const th = label.fontSize;
+      const th = fontSize;
       // Try positions: top, right, left, bottom
       const positions = [
         { x: label.x, y: label.y, ax: 'center' },           // top
@@ -568,14 +573,16 @@ const TravelMap = {
       for (const pos of positions) {
         const lx = pos.ax === 'center' ? pos.x - tw/2 : pos.ax === 'left' ? pos.x : pos.x - tw;
         const ly = pos.y - th;
-        const rect = { x: lx - 2, y: ly - 1, w: tw + 4, h: th + 2 };
+        // Add padding around label rect for minimum spacing
+        const pad = 3;
+        const rect = { x: lx - pad, y: ly - pad, w: tw + pad * 2, h: th + pad * 2 };
         // Check overlap with existing labels
         const overlaps = labelRects.some(r => !(rect.x + rect.w < r.x || rect.x > r.x + r.w || rect.y + rect.h < r.y || rect.y > r.y + r.h));
         if (!overlaps) {
           labelRects.push(rect);
-          ctx.font = `bold ${label.fontSize}px -apple-system, sans-serif`;
+          ctx.font = `bold ${fontSize}px -apple-system, sans-serif`;
           ctx.textAlign = pos.ax;
-          ctx.strokeStyle = 'rgba(7,13,24,0.9)';
+          ctx.strokeStyle = isLight ? 'rgba(249,250,251,0.9)' : 'rgba(7,13,24,0.9)';
           ctx.lineWidth = 3;
           ctx.lineJoin = 'round';
           ctx.strokeText(label.text, pos.x, pos.y);
@@ -585,19 +592,8 @@ const TravelMap = {
           break;
         }
       }
-      // If all positions overlap, draw at default with reduced opacity
-      if (!placed) {
-        ctx.font = `bold ${label.fontSize}px -apple-system, sans-serif`;
-        ctx.textAlign = 'center';
-        ctx.globalAlpha = 0.5;
-        ctx.strokeStyle = 'rgba(7,13,24,0.9)';
-        ctx.lineWidth = 3;
-        ctx.lineJoin = 'round';
-        ctx.strokeText(label.text, label.x, label.y);
-        ctx.fillStyle = label.color;
-        ctx.fillText(label.text, label.x, label.y);
-        ctx.globalAlpha = 1;
-      }
+      // If all positions overlap, skip the label entirely (hide low-priority labels)
+      // This prevents the cluttered look for nearby cities like 广州-深圳-香港
     });
   },
 

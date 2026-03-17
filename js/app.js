@@ -4,6 +4,11 @@
   // Init store
   Store.load();
 
+  // Set first use timestamp if not already set
+  if (!localStorage.getItem('tl_first_use')) {
+    localStorage.setItem('tl_first_use', Date.now().toString());
+  }
+
   // Init components
   TravelMap.init(document.getElementById('mapCanvas'));
   Trips.init();
@@ -82,8 +87,22 @@
   document.getElementById('btnSettings').onclick = () => {
     _renderGroupList();
     _updateBackupTime();
+    _checkBackupReminder();
     openModal('settingsModal');
   };
+
+  function _checkBackupReminder() {
+    const reminder = document.getElementById('backupReminder');
+    if (!reminder) return;
+    const firstUse = localStorage.getItem('tl_first_use') || (localStorage.setItem('tl_first_use', Date.now().toString()), Date.now().toString());
+    const lastBackup = localStorage.getItem('tl_last_backup');
+    const daysSinceFirst = (Date.now() - parseInt(firstUse)) / 86400000;
+    if (daysSinceFirst > 7 && !lastBackup && Store.getAll().length > 0) {
+      reminder.style.display = '';
+    } else {
+      reminder.style.display = 'none';
+    }
+  }
 
   function _renderGroupList() {
     const groups = Store.getGroups();

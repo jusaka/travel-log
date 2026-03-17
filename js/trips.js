@@ -339,12 +339,19 @@ const Trips = {
   },
 
   _offerReturnTrip(trip) {
+    // Only offer return trip if we have from and to
+    const hasRoute = trip.type === 'flight' ? (trip.fromCode && trip.toCode) : (trip.fromStation && trip.toStation);
+    if (!hasRoute) {
+      showToast('行程已添加 ✅');
+      return;
+    }
+
     // Show a toast with "add return trip" option
     const el = document.getElementById('toast');
-    el.innerHTML = `✅ 行程已添加 <button id="btnReturnTrip" style="margin-left:12px;background:var(--accent);color:#fff;border:none;padding:4px 12px;border-radius:12px;font-size:12px;font-weight:600;cursor:pointer">+ 添加返程</button>`;
+    el.innerHTML = `<span>行程已保存 ✅</span><span style="margin:0 8px;opacity:0.3">|</span><button id="btnReturnTrip" style="background:none;border:none;color:var(--accent);font-size:13px;font-weight:600;cursor:pointer;padding:6px 12px;min-height:44px;min-width:44px;text-decoration:underline">添加返程 ↩️</button>`;
     el.classList.add('show');
     clearTimeout(el._timer);
-    el._timer = setTimeout(() => { el.classList.remove('show'); el.textContent = ''; }, 8000);
+    el._timer = setTimeout(() => { el.classList.remove('show'); el.textContent = ''; }, 6000);
     
     document.getElementById('btnReturnTrip').onclick = () => {
       el.classList.remove('show');
@@ -384,8 +391,16 @@ const Trips = {
       document.getElementById('modalTitle').textContent = '添加返程';
       document.getElementById('btnDeleteTrip').style.display = 'none';
       document.getElementById('btnDuplicateTrip').style.display = 'none';
+      // Reset to manual mode
+      document.getElementById('addModeToggle').style.display = '';
+      document.getElementById('manualFormSection').style.display = '';
+      document.getElementById('aiImportSection').style.display = 'none';
+      document.getElementById('btnSaveTrip').textContent = '保存';
+      document.querySelectorAll('.mode-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === 'manual'));
       this.clearForm();
       this._prefillForm(returnTrip);
+      this._refreshGroupSelect(returnTrip.groupId);
+      this._collapseFormExtra();
       openModal('addTripModal');
     };
   },

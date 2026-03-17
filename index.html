@@ -426,6 +426,10 @@ date,type,fromCode,toCode,fromStation,toStation,flightNo,trainNo,airline,depTime
       <button class="modal-close" onclick="closeModal('settingsModal')">×</button>
     </div>
     <div class="modal-body">
+      <div id="backupReminder" style="display:none;background:var(--danger-bg);border:1px solid rgba(239,68,68,0.3);border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:12px;color:var(--danger)">
+        ⚠️ 你的数据尚未备份。清除浏览器缓存会丢失所有行程。
+        <button onclick="document.getElementById('btnCopyData').click()" style="margin-left:8px;color:var(--accent);background:none;border:none;font-size:12px;cursor:pointer;text-decoration:underline;min-height:44px;min-width:44px;padding:8px">立即备份</button>
+      </div>
       <div class="settings-section">
         <h4>外观</h4>
         <div style="display:flex;gap:8px">
@@ -464,7 +468,7 @@ date,type,fromCode,toCode,fromStation,toStation,flightNo,trainNo,airline,depTime
       </div>
       <div class="settings-section">
         <h4>关于</h4>
-        <p class="about-text">旅途纵横 v8.2<br>记录每一次出发，珍藏每一段旅程<br><span style="color:var(--text3);font-size:11px;margin-top:4px;display:block">Made with ❤️ by 和珅</span></p>
+        <p class="about-text">旅途纵横 v8.3<br>记录每一次出发，珍藏每一段旅程<br><span style="color:var(--text3);font-size:11px;margin-top:4px;display:block">Made with ❤️ by 和珅</span></p>
       </div>
     </div>
   </div>

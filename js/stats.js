@@ -33,19 +33,42 @@ const Stats = {
 
     // Overview - only show non-zero rows
     {
+      // Domestic/International split
+      const intlCodes = new Set(['SIN','BKK','NRT','KIX','ICN','HKG','MFM','TPE','KUL','MNL','HND','CDG','LHR','JFK','LAX','SFO','SYD','DXB','MEL','YVR','YYZ','FRA','AMS','FCO','BCN','DME','SVO','DOH','ADD','JNB','GRU','EZE','AKL','DEL','BOM','CGK','SGN','HAN','RGN','PNH','CEB']);
+      let domesticCount = 0, intlCount = 0;
+      const allTrips = Store.getAll();
+      allTrips.forEach(t => {
+        if (t.type === 'flight' && t.fromCode && t.toCode) {
+          if (intlCodes.has(t.fromCode) || intlCodes.has(t.toCode)) {
+            intlCount++;
+          } else {
+            domesticCount++;
+          }
+        } else if (t.type === 'train') {
+          domesticCount++;
+        }
+      });
+
       const overviewRows = [
         ['总行程', stats.totalTrips, '次', ''],
         ['✈️ 飞行', stats.flightCount, '次', 'var(--flight)'],
         ['🚄 高铁', stats.trainCount, '次', 'var(--train)'],
+      ];
+      if (domesticCount > 0 || intlCount > 0) {
+        overviewRows.push(['🏠 国内', domesticCount, '次', '']);
+        overviewRows.push(['🌏 国际/地区', intlCount, '次', '']);
+      }
+      overviewRows.push(
         ['🏙️ 到访城市', stats.cityCount, '个', ''],
         ['🛫 途经机场', stats.airportCount, '个', ''],
         ['🚉 途经车站', stats.stationCount, '个', ''],
         ['⏱️ 总旅途时间', stats.totalMins, '', ''],
         ['💰 总交通花费', stats.totalPrice, '元', ''],
-      ].filter(([, val]) => val > 0);
+      );
+      const filteredRows = overviewRows.filter(([, val]) => val > 0);
       html += `<div class="stat-card">
         <h4>📋 出行概览</h4>
-        ${overviewRows.map(([label, val, unit, color]) => {
+        ${filteredRows.map(([label, val, unit, color]) => {
           const display = label.includes('时间') ? fmtDuration(val) : label.includes('花费') ? '¥' + val.toLocaleString() : val + ' ' + unit;
           const style = color ? ` style="color:${color};font-weight:700"` : '';
           return `<div class="stat-row"><span class="stat-label">${label}</span><span class="stat-value"${style}>${display}</span></div>`;
