@@ -39,7 +39,7 @@ const Annual = {
     trips.forEach(t => {
       const d = t.distance || 0;
       totalKm += d;
-      totalMins += t.duration || 0;
+      totalMins += (typeof t.duration === "number" && !isNaN(t.duration)) ? t.duration : 0;
       if (t.price) totalPrice += t.price;
       if (t.fromCity) cities.add(t.fromCity);
       if (t.toCity) cities.add(t.toCity);
@@ -284,7 +284,7 @@ const Annual = {
     const airlines = {};
     trips.forEach(t => {
       totalKm += t.distance || 0;
-      totalMins += t.duration || 0;
+      totalMins += (typeof t.duration === "number" && !isNaN(t.duration)) ? t.duration : 0;
       if (t.fromCity) cities.add(t.fromCity);
       if (t.toCity) cities.add(t.toCity);
     });

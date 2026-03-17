@@ -115,7 +115,8 @@ function fmtDist(km) {
 
 // Format duration in minutes
 function fmtDuration(mins) {
-  if (!mins || mins <= 0) return '';
+  if (!mins || isNaN(mins) || mins <= 0) return '';
+  mins = Math.round(mins);
   const h = Math.floor(mins / 60);
   const m = mins % 60;
   if (h === 0) return m + '分钟';
