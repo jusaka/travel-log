@@ -605,7 +605,7 @@ const Trips = {
     const yearSelect = document.getElementById('filterYear');
     const years = Store.getYears();
     const currentYearVal = yearSelect.value;
-    yearSelect.innerHTML = '<option value="all">全部年份</option>';
+    yearSelect.innerHTML = '<option value="all">年份</option>';
     years.forEach(y => {
       const opt = document.createElement('option');
       opt.value = y; opt.textContent = y + '年';
@@ -617,8 +617,9 @@ const Trips = {
     const groupSelect = document.getElementById('filterGroup');
     const currentGroupVal = groupSelect.value;
     const groups = Store.getGroups();
-    groupSelect.innerHTML = '<option value="all">全部旅行</option>';
+    groupSelect.innerHTML = '<option value="all">旅行组</option>';
     if (groups.length > 0) {
+      groupSelect.style.display = '';
       groups.forEach(g => {
         const opt = document.createElement('option');
         opt.value = g.id; opt.textContent = '🏷️ ' + g.name;
@@ -627,6 +628,8 @@ const Trips = {
       const ungrouped = document.createElement('option');
       ungrouped.value = 'ungrouped'; ungrouped.textContent = '未归组';
       groupSelect.appendChild(ungrouped);
+    } else {
+      groupSelect.style.display = 'none';
     }
     groupSelect.value = currentGroupVal;
 
