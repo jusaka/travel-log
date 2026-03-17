@@ -210,6 +210,7 @@ const Stats = {
       const dpr = window.devicePixelRatio || 1;
       const W = canvas.offsetWidth;
       const H = canvas.offsetHeight;
+      if (W <= 0 || H <= 0) return; // Guard: hidden tab has zero dimensions
       canvas.width = W * dpr;
       canvas.height = H * dpr;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -318,6 +319,7 @@ const Stats = {
       const dpr = window.devicePixelRatio || 1;
       const W = canvas.offsetWidth;
       const H = canvas.offsetHeight;
+      if (W <= 0 || H <= 0) return; // Guard: hidden tab
       canvas.width = W * dpr;
       canvas.height = H * dpr;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
