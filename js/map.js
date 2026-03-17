@@ -179,6 +179,7 @@ const TravelMap = {
 
   draw() {
     if (this.animFrame) cancelAnimationFrame(this.animFrame);
+    this._needsRedraw = false;
     this._startAnimation();
   },
 

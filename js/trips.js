@@ -487,7 +487,7 @@ const Trips = {
     Store.delete(this.editingId);
     closeModal('addTripModal');
     this.render();
-    TravelMap.draw();
+    TravelMap._needsRedraw = true;
     TravelMap.updateSummary();
     Stats.render();
     Annual.render();
@@ -564,7 +564,7 @@ const Trips = {
         Store.delete(id);
         showUndoToast('已删除行程', trip);
         this.render();
-        TravelMap.draw();
+        TravelMap._needsRedraw = true;
         TravelMap.updateSummary();
         Stats.render();
         Annual.render();
@@ -832,19 +832,19 @@ const Trips = {
     if (no) rows.push(['航班/车次', `<span style="font-weight:700">${escHtml(no)}</span>`]);
     if (airlineName) rows.push(['航空公司', escHtml(airlineName)]);
     if (t.aircraft) rows.push(['机型', escHtml(t.aircraft)]);
-    if (t.seat) rows.push(['座位', escHtml(t.seat)]);
     if (isF && t.seatClass) {
       const classMap = {economy:'经济舱',business:'商务舱',first:'头等舱',premium:'超级经济舱'};
       rows.push(['舱位', classMap[t.seatClass] || t.seatClass]);
     }
     if (!isF && t.seatType) {
-      const typeMap = {second:'二等座',first:'一等座',business:'商务座',standing:'站票'};
+      const typeMap = {second:'二等座',first:'一等座',business:'商务座',standing:'站票',sleeper:'卧铺'};
       rows.push(['席别', typeMap[t.seatType] || t.seatType]);
     }
-    if (t.note) rows.push(['备注', escHtml(t.note)]);
+    if (t.seat) rows.push(['座位', escHtml(t.seat)]);
     if (t.price) rows.push(['票价', '¥' + t.price.toLocaleString()]);
     const detailGroup = t.groupId ? Store.getGroupById(t.groupId) : null;
-    if (detailGroup) rows.push(['旅行', escHtml(detailGroup.name)]);
+    if (detailGroup) rows.push(['旅行组', '🏷️ ' + escHtml(detailGroup.name)]);
+    if (t.note) rows.push(['备注', escHtml(t.note)]);
     
     if (rows.length > 0) {
       html += `<div style="margin-bottom:16px">
@@ -866,7 +866,7 @@ const Trips = {
       closeModal('tripDetailModal');
       showUndoToast('已删除行程', tripData);
       this.render();
-      TravelMap.draw();
+      TravelMap._needsRedraw = true;
       TravelMap.updateSummary();
       Stats.render();
       Annual.render();

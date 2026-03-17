@@ -38,6 +38,7 @@
       // Refresh content on tab switch
       if (tab.dataset.tab === 'map') {
         TravelMap.resize();
+        if (TravelMap._needsRedraw) TravelMap.draw();
         TravelMap._startAnimation(); // Resume animation
       } else {
         TravelMap.stopAnimation(); // Pause animation when map not visible
@@ -119,31 +120,35 @@
   function _renderGroupList() {
     const groups = Store.getGroups();
     const container = document.getElementById('groupList');
+    let html = '';
     if (groups.length === 0) {
-      container.innerHTML = '<div style="color:var(--text3);font-size:12px;padding:8px 0">暂无旅行组，添加行程时可创建</div>';
-      return;
+      html = '<div style="color:var(--text3);font-size:12px;padding:8px 0">暂无旅行组，点击下方按钮创建</div>';
+    } else {
+      const allTrips = Store.getAll();
+      html = groups.map(g => {
+        const groupTrips = allTrips.filter(t => t.groupId === g.id);
+        const tripCount = groupTrips.length;
+        const totalKm = groupTrips.reduce((s, t) => s + (t.distance || 0), 0);
+        const totalPrice = groupTrips.reduce((s, t) => s + (t.price || 0), 0);
+        const sortedTrips = [...groupTrips].sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+        const dateRange = sortedTrips.length > 0 ? 
+          `${fmtDateShort(sortedTrips[0].date)} ~ ${fmtDateShort(sortedTrips[sortedTrips.length-1].date)}` : '';
+        return `<div class="group-card" style="display:flex;align-items:center;justify-content:space-between;padding:10px;background:var(--bg3);border-radius:8px;margin-bottom:6px;cursor:pointer" onclick="_clickGroup('${g.id}')">
+          <div style="flex:1;min-width:0">
+            <div style="font-size:13px;font-weight:600">🏷️ ${escHtml(g.name)}</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:2px">${tripCount}次行程 · ${fmtDist(totalKm)}${totalPrice > 0 ? ' · ¥' + totalPrice.toLocaleString() : ''}</div>
+            ${dateRange ? `<div style="font-size:10px;color:var(--text3)">${dateRange}</div>` : ''}
+          </div>
+          <div style="display:flex;gap:4px;flex-shrink:0" onclick="event.stopPropagation()">
+            <button class="btn-icon" style="min-width:32px;min-height:32px;font-size:14px" onclick="_renameGroup('${g.id}')">✏️</button>
+            <button class="btn-icon" style="min-width:32px;min-height:32px;font-size:14px;color:var(--danger)" onclick="_deleteGroup('${g.id}','${escHtml(g.name)}')">🗑️</button>
+          </div>
+        </div>`;
+      }).join('');
     }
-    const allTrips = Store.getAll();
-    container.innerHTML = groups.map(g => {
-      const groupTrips = allTrips.filter(t => t.groupId === g.id);
-      const tripCount = groupTrips.length;
-      const totalKm = groupTrips.reduce((s, t) => s + (t.distance || 0), 0);
-      const totalPrice = groupTrips.reduce((s, t) => s + (t.price || 0), 0);
-      const sortedTrips = [...groupTrips].sort((a, b) => (a.date || '').localeCompare(b.date || ''));
-      const dateRange = sortedTrips.length > 0 ? 
-        `${fmtDateShort(sortedTrips[0].date)} ~ ${fmtDateShort(sortedTrips[sortedTrips.length-1].date)}` : '';
-      return `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px;background:var(--bg3);border-radius:8px;margin-bottom:6px">
-        <div style="flex:1;min-width:0">
-          <div style="font-size:13px;font-weight:600">🏷️ ${escHtml(g.name)}</div>
-          <div style="font-size:11px;color:var(--text3);margin-top:2px">${tripCount}次行程 · ${fmtDist(totalKm)}${totalPrice > 0 ? ' · ¥' + totalPrice.toLocaleString() : ''}</div>
-          ${dateRange ? `<div style="font-size:10px;color:var(--text3)">${dateRange}</div>` : ''}
-        </div>
-        <div style="display:flex;gap:4px;flex-shrink:0">
-          <button class="btn-icon" style="min-width:32px;min-height:32px;font-size:14px" onclick="_renameGroup('${g.id}')">✏️</button>
-          <button class="btn-icon" style="min-width:32px;min-height:32px;font-size:14px;color:var(--danger)" onclick="_deleteGroup('${g.id}','${escHtml(g.name)}')">🗑️</button>
-        </div>
-      </div>`;
-    }).join('');
+    // Add "new group" button
+    html += `<button class="btn btn-full" id="btnNewGroupSettings" style="margin-top:6px;font-size:13px" onclick="_createNewGroup()">+ 新建旅行组</button>`;
+    container.innerHTML = html;
   }
 
   // Global group management functions
@@ -164,6 +169,21 @@
       Trips.render();
       showToast('已删除旅行组');
     });
+  };
+  window._createNewGroup = () => {
+    const name = prompt('旅行组名称（如"2025春节回家"）：');
+    if (!name || !name.trim()) return;
+    Store.addGroup(name.trim());
+    _renderGroupList();
+    showToast('已创建旅行组 ✅');
+  };
+  window._clickGroup = (groupId) => {
+    closeModal('settingsModal');
+    document.querySelector('.tab[data-tab="trips"]').click();
+    setTimeout(() => {
+      document.getElementById('filterGroup').value = groupId;
+      document.getElementById('filterGroup').dispatchEvent(new Event('change'));
+    }, 200);
   };
 
   // Theme toggle
