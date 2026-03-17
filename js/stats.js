@@ -1,5 +1,40 @@
 // ===== Statistics View v2 =====
 
+function getTravelPersonality() {
+  const trips = Store.getAll();
+  const flights = trips.filter(t => t.type === 'flight');
+  const trains = trips.filter(t => t.type === 'train');
+  const totalKm = trips.reduce((s, t) => s + (t.distance || 0), 0);
+  const cities = new Set();
+  trips.forEach(t => { if (t.fromCity) cities.add(t.fromCity); if (t.toCity) cities.add(t.toCity); });
+  const intlCodes = new Set(['SIN','BKK','NRT','KIX','ICN','HKG','MFM','TPE','KUL','MNL','HND','CDG','LHR','JFK','LAX','SFO','SYD','DXB']);
+  const intlCount = flights.filter(f => intlCodes.has(f.fromCode) || intlCodes.has(f.toCode)).length;
+
+  if (intlCount > flights.length * 0.5 && intlCount > 0) return { type: '🌏 环球探索家', desc: '你的足迹遍布全球，国际航线是你的主战场', color: '#3b82f6', emoji: '🌏' };
+  if (trains.length > flights.length * 1.5 && trains.length > 0) return { type: '🚄 高铁侠', desc: '比起飞行你更爱脚踏实地，高铁是你的出行首选', color: '#10b981', emoji: '🚄' };
+  if (totalKm > 50000) return { type: '✈️ 空中飞人', desc: '里程数惊人，你几乎活在天上', color: '#f59e0b', emoji: '✈️' };
+  if (cities.size > 15) return { type: '🗺️ 城市收集家', desc: '到访城市无数，每到一处都留下足迹', color: '#8b5cf6', emoji: '🗺️' };
+  if (flights.length > 0 && trains.length > 0) return { type: '🔀 双栖旅者', desc: '飞行与高铁并重，灵活切换出行方式', color: '#ec4899', emoji: '🔀' };
+  if (flights.length > 5) return { type: '🛫 常旅客', desc: '飞行是你的日常，机场是你的第二个家', color: '#f97316', emoji: '🛫' };
+  return { type: '🌱 旅行新手', desc: '旅途刚刚开始，未来可期', color: '#6b7280', emoji: '🌱' };
+}
+
+function getNextMilestone(totalKm) {
+  const milestones = [
+    { km: 5000, label: '5,000 km' },
+    { km: 10000, label: '1万 km' },
+    { km: 20000, label: '2万 km' },
+    { km: 40075, label: '绕地球一圈' },
+    { km: 80000, label: '8万 km' },
+    { km: 100000, label: '10万 km' },
+    { km: 384400, label: '飞到月球' },
+  ];
+  for (const m of milestones) {
+    if (totalKm < m.km) return m;
+  }
+  return null;
+}
+
 const Stats = {
   render() {
     const stats = Store.getStats();
@@ -29,6 +64,15 @@ const Stats = {
           <div style="font-size:11px;color:var(--text2);margin-top:2px">🚄 高铁里程</div>
         </div>
       </div>
+    </div>`;
+
+    // Travel personality card
+    const personality = getTravelPersonality();
+    html += `<div style="text-align:center;margin:16px 0;padding:16px;background:var(--bg2);border-radius:12px;border:1px solid var(--bg3)">
+      <div style="font-size:32px">${personality.emoji}</div>
+      <div style="font-size:18px;font-weight:700;color:${personality.color};margin:4px 0">${personality.type}</div>
+      <div style="font-size:13px;color:var(--text3)">${personality.desc}</div>
+      <button onclick="Stats.sharePersonality()" style="margin-top:12px;padding:8px 20px;border-radius:20px;background:var(--accent);color:#fff;border:none;font-size:13px;cursor:pointer">📤 分享人格卡片</button>
     </div>`;
 
     // Overview - only show non-zero rows
@@ -190,6 +234,20 @@ const Stats = {
             </div>`;
           }).join('')}
         </div>
+      </div>`;
+    }
+
+    // Next milestone progress bar
+    const milestone = getNextMilestone(stats.totalKm);
+    if (milestone) {
+      const pct = Math.min((stats.totalKm / milestone.km) * 100, 100);
+      const remaining = milestone.km - stats.totalKm;
+      html += `<div style="padding:12px;background:var(--bg2);border-radius:10px;margin:12px 0">
+        <div style="font-size:12px;color:var(--text3);margin-bottom:6px">🎯 下一个目标：${milestone.label} (${milestone.km.toLocaleString()} km)</div>
+        <div style="height:8px;background:var(--bg3);border-radius:4px;overflow:hidden">
+          <div style="height:100%;background:var(--flight);border-radius:4px;width:${pct.toFixed(1)}%;transition:width 0.5s"></div>
+        </div>
+        <div style="font-size:11px;color:var(--text3);margin-top:4px;text-align:right">还差 ${remaining.toLocaleString()} km</div>
       </div>`;
     }
 
@@ -628,6 +686,107 @@ const Stats = {
     finalCanvas.toBlob(blob => {
       const text = `${stats.totalTrips}次出行 · ${fmtDist(stats.totalKm)} · ${stats.cityCount}个城市`;
       showSharePreview(blob, '旅途纵横-出行统计.png', '我的出行统计', text);
+    }, 'image/png');
+  },
+
+  sharePersonality() {
+    const stats = Store.getStats();
+    const trips = Store.getAll();
+    const personality = getTravelPersonality();
+    if (stats.totalTrips === 0) { showToast('暂无数据'); return; }
+
+    const flights = trips.filter(t => t.type === 'flight');
+    const trains = trips.filter(t => t.type === 'train');
+    const cities = new Set();
+    trips.forEach(t => { if (t.fromCity) cities.add(t.fromCity); if (t.toCity) cities.add(t.toCity); });
+
+    const dpr = 2;
+    const W = 600;
+    const H = 400;
+    const canvas = document.createElement('canvas');
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
+    const ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+
+    // Background gradient
+    const bg = ctx.createLinearGradient(0, 0, W, H);
+    bg.addColorStop(0, '#0c1929');
+    bg.addColorStop(0.5, '#111d35');
+    bg.addColorStop(1, '#080d18');
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, W, H);
+
+    // Border
+    ctx.strokeStyle = 'rgba(245,158,11,0.15)';
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(12, 12, W - 24, H - 24);
+
+    // Stars decoration
+    ctx.globalAlpha = 0.3;
+    for (let i = 0; i < 40; i++) {
+      ctx.beginPath();
+      const sz = 0.4 + Math.random() * 1.2;
+      ctx.arc(Math.random() * W, Math.random() * H, sz, 0, Math.PI * 2);
+      ctx.fillStyle = '#fff';
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+
+    // Decorative glow with personality color
+    ctx.globalAlpha = 0.06;
+    ctx.beginPath(); ctx.arc(W * 0.75, 50, 100, 0, Math.PI * 2); ctx.fillStyle = personality.color; ctx.fill();
+    ctx.beginPath(); ctx.arc(W * 0.25, H * 0.7, 80, 0, Math.PI * 2); ctx.fillStyle = personality.color; ctx.fill();
+    ctx.globalAlpha = 1;
+
+    // Header
+    ctx.fillStyle = '#9ca3af';
+    ctx.font = '13px -apple-system, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('✈️ 旅途纵横 · 旅行人格', W / 2, 40);
+
+    // Big emoji
+    ctx.font = '56px -apple-system, sans-serif';
+    ctx.fillText(personality.emoji, W / 2, 110);
+
+    // Personality type name
+    ctx.fillStyle = personality.color;
+    ctx.font = 'bold 28px -apple-system, sans-serif';
+    ctx.fillText(personality.type, W / 2, 155);
+
+    // Description
+    ctx.fillStyle = '#d1d5db';
+    ctx.font = '14px -apple-system, sans-serif';
+    ctx.fillText(personality.desc, W / 2, 185);
+
+    // Data support line
+    const dataLine = `${flights.length}次飞行 · ${trains.length}次高铁 · ${cities.size}个城市 · ${fmtDist(stats.totalKm)}`;
+    ctx.fillStyle = '#6b7280';
+    ctx.font = '12px -apple-system, sans-serif';
+    ctx.fillText(dataLine, W / 2, 215);
+
+    // Divider
+    const dg = ctx.createLinearGradient(60, 0, W - 60, 0);
+    dg.addColorStop(0, 'transparent');
+    dg.addColorStop(0.5, 'rgba(96,165,250,0.3)');
+    dg.addColorStop(1, 'transparent');
+    ctx.strokeStyle = dg;
+    ctx.lineWidth = 0.8;
+    ctx.beginPath(); ctx.moveTo(60, 235); ctx.lineTo(W - 60, 235); ctx.stroke();
+
+    // Personality color accent bar
+    ctx.fillStyle = personality.color;
+    ctx.globalAlpha = 0.15;
+    ctx.beginPath();
+    ctx.roundRect(W / 2 - 120, 245, 240, 4, 2);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+
+    // Footer with QR
+    const footerH = drawShareFooter(ctx, W, 260, 50);
+
+    canvas.toBlob(blob => {
+      showSharePreview(blob, '旅途纵横-旅行人格.png', '我的旅行人格', personality.type + ' - ' + personality.desc);
     }, 'image/png');
   },
 };
