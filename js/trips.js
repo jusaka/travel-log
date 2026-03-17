@@ -841,10 +841,25 @@ const Trips = {
     
     body.innerHTML = html;
     
-    // Edit button
+    // Delete button in detail modal
+    document.getElementById('btnDeleteFromDetail').onclick = () => {
+      showConfirm('确定删除这条行程？', () => {
+        const tripData = Store.getById(id);
+        Store.delete(id);
+        closeModal('confirmModal');
+        closeModal('tripDetailModal');
+        showUndoToast('已删除行程', tripData);
+        this.render();
+        TravelMap.draw();
+        TravelMap.updateSummary();
+        Stats.render();
+        Annual.render();
+      });
+    };
+
+    // Edit button — openModal inside openEdit auto-closes tripDetailModal (mutual exclusion)
     document.getElementById('btnEditFromDetail').onclick = () => {
-      closeModal('tripDetailModal');
-      setTimeout(() => this.openEdit(id), 200);
+      this.openEdit(id);
     };
     
     openModal('tripDetailModal');

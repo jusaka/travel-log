@@ -155,7 +155,7 @@ const Annual = {
       if (topRoute[1] > 1) {
         html += `<div class="stat-row"><span class="stat-label">最常路线</span><span class="stat-value">${escHtml(topRoute[0])} (${topRoute[1]}次)</span></div>`;
       } else {
-        html += `<div class="stat-row"><span class="stat-label">路线</span><span class="stat-value">${escHtml(topRoute[0])}</span></div>`;
+        html += `<div class="stat-row"><span class="stat-label">热门路线</span><span class="stat-value">${escHtml(topRoute[0])}</span></div>`;
       }
     }
     if (topAirline) {
@@ -220,7 +220,7 @@ const Annual = {
       mt.sort((a,b) => a.date.localeCompare(b.date)).forEach(t => {
         const icon = t.type === 'flight' ? '✈️' : '🚄';
         const no = t.type === 'flight' ? t.flightNo : t.trainNo;
-        const km = t.distance ? `${fmtDist(t.distance)}` : '';
+        const km = t.distance ? `${fmtDist(t.distance)}` : '里程未知';
         const from = t.fromCity || (t.fromCode && AIRPORTS[t.fromCode]?.city) || t.fromStation || '?';
         const to = t.toCity || (t.toCode && AIRPORTS[t.toCode]?.city) || t.toStation || '?';
         html += `<div style="font-size:13px;color:var(--text2);padding:6px 0;border-bottom:1px solid var(--bg3);display:flex;justify-content:space-between;align-items:center">
@@ -258,6 +258,7 @@ const Annual = {
             <div style="font-size:24px;margin-bottom:4px">${a.icon}</div>
             <div style="font-size:11px;font-weight:600;color:${a.unlocked ? 'var(--flight)' : 'var(--text3)'}">${a.name}</div>
             <div style="font-size:9px;color:var(--text3);margin-top:2px">${a.desc}</div>
+            ${!a.unlocked && a.progress ? `<div style="font-size:9px;color:var(--accent);margin-top:3px">${a.progress}</div>` : ''}
           </div>`).join('')}
         </div>
         <div style="font-size:10px;color:var(--text3);margin-top:8px;text-align:center">💡 点击已解锁徽章可生成分享卡片</div>
@@ -812,16 +813,16 @@ const Annual = {
     const hasBig3 = big3.every(c => allAirlines.has(c));
 
     return [
-      { icon: '🌍', name: '首次起飞', desc: '完成首次飞行', unlocked: allFlights.length >= 1 },
-      { icon: '✈️', name: '飞行达人', desc: '年飞10次以上', unlocked: flights.length >= 10 },
-      { icon: '🚄', name: '高铁先锋', desc: '年坐5次高铁', unlocked: trains.length >= 5 },
-      { icon: '🌏', name: '国际旅行家', desc: '有国际航班', unlocked: allHasIntl },
-      { icon: '🏙️', name: '城市探索者', desc: '到访10个城市', unlocked: allCities.size >= 10 },
-      { icon: '📏', name: '万里长征', desc: '年飞行1万km', unlocked: totalKm >= 10000 },
-      { icon: '🔥', name: '停不下来', desc: '年出行20次', unlocked: trips.length >= 20 },
-      { icon: '🛫', name: '三大航集齐', desc: '坐过国航东航南航', unlocked: hasBig3 },
-      { icon: '💼', name: '商务精英', desc: '坐过商务舱', unlocked: allFlights.some(f => f.seatClass === 'business' || f.seatClass === 'first') },
-      { icon: '🌍', name: '环球旅行', desc: '累计4万km', unlocked: allTrips.reduce((s,t) => s + (t.distance||0), 0) >= 40000 },
+      { icon: '🌍', name: '首次起飞', desc: '完成首次飞行', unlocked: allFlights.length >= 1, progress: `${Math.min(allFlights.length, 1)}/1` },
+      { icon: '✈️', name: '飞行达人', desc: '年飞10次以上', unlocked: flights.length >= 10, progress: `${Math.min(flights.length, 10)}/10` },
+      { icon: '🚄', name: '高铁先锋', desc: '年坐5次高铁', unlocked: trains.length >= 5, progress: `${Math.min(trains.length, 5)}/5` },
+      { icon: '🌏', name: '国际旅行家', desc: '有国际航班', unlocked: allHasIntl, progress: allHasIntl ? '✅' : '0/1' },
+      { icon: '🏙️', name: '城市探索者', desc: '到访10个城市', unlocked: allCities.size >= 10, progress: `${Math.min(allCities.size, 10)}/10` },
+      { icon: '📏', name: '万里长征', desc: '年飞行1万km', unlocked: totalKm >= 10000, progress: `${fmtDist(Math.min(totalKm, 10000))}/1万km` },
+      { icon: '🔥', name: '停不下来', desc: '年出行20次', unlocked: trips.length >= 20, progress: `${Math.min(trips.length, 20)}/20` },
+      { icon: '🛫', name: '三大航集齐', desc: '坐过国航东航南航', unlocked: hasBig3, progress: `${big3.filter(c => allAirlines.has(c)).length}/3` },
+      { icon: '💼', name: '商务精英', desc: '坐过商务舱', unlocked: allFlights.some(f => f.seatClass === 'business' || f.seatClass === 'first'), progress: allFlights.some(f => f.seatClass === 'business' || f.seatClass === 'first') ? '✅' : '0/1' },
+      { icon: '🌍', name: '环球旅行', desc: '累计4万km', unlocked: allTrips.reduce((s,t) => s + (t.distance||0), 0) >= 40000, progress: `${fmtDist(Math.min(allTrips.reduce((s,t) => s + (t.distance||0), 0), 40000))}/4万km` },
     ];
   },
 
