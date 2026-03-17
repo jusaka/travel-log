@@ -632,7 +632,7 @@ const Trips = {
 
     const list = document.getElementById('tripList');
     const empty = document.getElementById('emptyTrips');
-    const allTrips = Store.getTrips();
+    const allTrips = Store.getAll();
 
     if (trips.length === 0) {
       list.innerHTML = '';
