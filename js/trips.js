@@ -715,12 +715,14 @@ const Trips = {
       const no = isF ? (t.flightNo || '') : (t.trainNo || '');
       const dur = t.duration ? fmtDuration(t.duration) : '';
       const dist = t.distance ? fmtDist(t.distance) : '—';
+      const fromDisplay = t.fromCity || t.fromStation || '?';
+      const toDisplay = t.toCity || t.toStation || '?';
       const fromLabel = isF
-        ? (t.fromCode || t.fromCity || '?')
-        : (t.fromStation && t.fromCity && !t.fromStation.includes(t.fromCity) ? t.fromStation : (t.fromCity ? '' : (t.fromStation || '?')));
+        ? (t.fromCode || '')
+        : (t.fromStation && t.fromStation !== fromDisplay ? t.fromStation : '');
       const toLabel = isF
-        ? (t.toCode || t.toCity || '?')
-        : (t.toStation && t.toCity && !t.toStation.includes(t.toCity) ? t.toStation : (t.toCity ? '' : (t.toStation || '?')));
+        ? (t.toCode || '')
+        : (t.toStation && t.toStation !== toDisplay ? t.toStation : '');
       const airline = isF && t.airline ? (AIRLINES[t.airline]?.name || t.airline) : '';
       const group = t.groupId ? Store.getGroupById(t.groupId) : null;
       const groupBadge = group ? `<span style="font-size:10px;background:rgba(59,130,246,0.15);color:var(--accent);padding:1px 6px;border-radius:8px;margin-left:6px">🏷️ ${escHtml(group.name)}</span>` : '';
@@ -735,7 +737,7 @@ const Trips = {
         </div>
         <div class="trip-route" style="margin:10px 0">
           <div style="text-align:center">
-            <div class="trip-city">${highlight(t.fromCity || t.fromStation || '?')}</div>
+            <div class="trip-city">${highlight(fromDisplay)}</div>
             ${fromLabel ? `<div style="font-size:11px;color:var(--text3);margin-top:2px">${highlight(fromLabel)}</div>` : ''}
           </div>
           <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px">
@@ -744,7 +746,7 @@ const Trips = {
             <div style="font-size:10px;color:${isF ? 'var(--flight)' : 'var(--train)'}">→</div>
           </div>
           <div style="text-align:center">
-            <div class="trip-city">${highlight(t.toCity || t.toStation || '?')}</div>
+            <div class="trip-city">${highlight(toDisplay)}</div>
             ${toLabel ? `<div style="font-size:11px;color:var(--text3);margin-top:2px">${highlight(toLabel)}</div>` : ''}
           </div>
         </div>
