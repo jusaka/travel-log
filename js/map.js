@@ -965,85 +965,178 @@ const TravelMap = {
       const cities = new Set();
       trips.forEach(t => { if (t.fromCity) cities.add(t.fromCity); if (t.toCity) cities.add(t.toCity); });
       const totalKm = trips.reduce((s, t) => s + (t.distance || 0), 0);
+      const totalMins = trips.reduce((s, t) => s + (t.duration || 0), 0);
+      
+      // Get top cities
+      const cityCount = {};
+      trips.forEach(t => {
+        if (t.fromCity) cityCount[t.fromCity] = (cityCount[t.fromCity] || 0) + 1;
+        if (t.toCity) cityCount[t.toCity] = (cityCount[t.toCity] || 0) + 1;
+      });
+      const topCities = Object.entries(cityCount).sort((a, b) => b[1] - a[1]).slice(0, 5);
 
-      // High-res share card
-      const W = 800, H = 1000;
+      const dpr = 2;
+      const W = 800, H = 1200;
       const sc = document.createElement('canvas');
-      sc.width = W; sc.height = H;
+      sc.width = W * dpr; sc.height = H * dpr;
       const ctx = sc.getContext('2d');
+      ctx.scale(dpr, dpr);
 
-      // Background
-      ctx.fillStyle = '#0a0f1a';
+      // Background gradient
+      const bg = ctx.createLinearGradient(0, 0, 0, H);
+      bg.addColorStop(0, '#0a0f1a');
+      bg.addColorStop(1, '#0d1b2a');
+      ctx.fillStyle = bg;
       ctx.fillRect(0, 0, W, H);
+
       // Border
-      ctx.strokeStyle = 'rgba(245,158,11,0.3)';
+      ctx.strokeStyle = 'rgba(245,158,11,0.25)';
       ctx.lineWidth = 2;
       ctx.strokeRect(20, 20, W - 40, H - 40);
 
       // Title
       ctx.fillStyle = '#f59e0b';
-      ctx.font = 'bold 32px -apple-system, sans-serif';
+      ctx.font = 'bold 30px -apple-system, sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText('✈️ 我的旅行足迹', W / 2, 70);
+      ctx.fillText('我的旅行足迹', W / 2, 65);
 
-      // Draw map area — re-render from data
-      const mapY = 100, mapH = 550;
-      // Draw the existing canvas scaled into the card
-      ctx.drawImage(this.canvas, 0, 0, this.canvas.width, this.canvas.height, 40, mapY, W - 80, mapH);
+      // Map area — use high-res source canvas
+      const mapY = 90, mapH = 500;
+      ctx.save();
+      ctx.beginPath();
+      ctx.roundRect(30, mapY, W - 60, mapH, 12);
+      ctx.clip();
+      ctx.drawImage(this.canvas, 0, 0, this.canvas.width, this.canvas.height, 30, mapY, W - 60, mapH);
+      ctx.restore();
+      // Map border
+      ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.roundRect(30, mapY, W - 60, mapH, 12);
+      ctx.stroke();
 
-      // Stats section
-      const sy = mapY + mapH + 30;
+      let curY = mapY + mapH + 40;
 
-      // Main stat - total distance
+      // === Hero stats ===
       ctx.fillStyle = '#f59e0b';
-      ctx.font = 'bold 48px -apple-system, sans-serif';
+      ctx.font = 'bold 52px -apple-system, sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText(fmtDist(totalKm), W / 2, sy);
+      ctx.fillText(fmtDist(totalKm), W / 2, curY);
+      curY += 32;
 
-      // Sub stats
       ctx.fillStyle = '#94a3b8';
-      ctx.font = '20px -apple-system, sans-serif';
-      ctx.fillText(flights.length + ' 次飞行 · ' + trains.length + ' 次高铁 · ' + cities.size + ' 个城市', W / 2, sy + 35);
+      ctx.font = '18px -apple-system, sans-serif';
+      ctx.fillText(flights.length + ' 次飞行 · ' + trains.length + ' 次高铁 · ' + cities.size + ' 个城市', W / 2, curY);
+      curY += 20;
 
-      // Fun facts
+      if (totalMins > 0) {
+        ctx.fillStyle = '#64748b';
+        ctx.font = '14px -apple-system, sans-serif';
+        ctx.fillText('累计旅途时间 ' + fmtDuration(totalMins), W / 2, curY);
+      }
+      curY += 30;
+
+      // === Rank ===
       const earthCircum = 40075;
       const earthPct = (totalKm / earthCircum * 100).toFixed(1);
       const moonDist = 384400;
       const moonPct = (totalKm / moonDist * 100).toFixed(1);
-
-      // Rank system
       let rank;
-      if (totalKm === 0) rank = '🏠 家里蹲';
-      else if (totalKm < 2000) rank = '🚶 初出茅庐';
-      else if (totalKm < 5000) rank = '🎒 小试牛刀';
-      else if (totalKm < 10000) rank = '🚄 常旅之人';
-      else if (totalKm < 20000) rank = '✈️ 空中飞人';
-      else if (totalKm < 40000) rank = '🌍 半个地球';
-      else if (totalKm < 80000) rank = '🌏 环球旅者';
-      else if (totalKm < 200000) rank = '🚀 星际起步';
-      else rank = '👑 旅行之王';
+      if (totalKm === 0) rank = '家里蹲';
+      else if (totalKm < 2000) rank = '初出茅庐';
+      else if (totalKm < 5000) rank = '小试牛刀';
+      else if (totalKm < 10000) rank = '常旅之人';
+      else if (totalKm < 20000) rank = '空中飞人';
+      else if (totalKm < 40000) rank = '半个地球';
+      else if (totalKm < 80000) rank = '环球旅者';
+      else if (totalKm < 200000) rank = '星际起步';
+      else rank = '旅行之王';
 
-      ctx.fillStyle = '#e2e8f0';
-      ctx.font = 'bold 26px -apple-system, sans-serif';
-      ctx.fillText(rank, W / 2, sy + 80);
-
-      ctx.fillStyle = '#64748b';
-      ctx.font = '16px -apple-system, sans-serif';
-      ctx.fillText('绕地球 ' + earthPct + '% · 到月球 ' + moonPct + '%', W / 2, sy + 112);
-
-      // Progress bar - earth circumference
-      const barX = 120, barW = W - 240, barY = sy + 130;
+      // Rank badge
       ctx.fillStyle = '#1e293b';
-      ctx.beginPath(); ctx.roundRect(barX, barY, barW, 10, 5); ctx.fill();
+      ctx.beginPath();
+      ctx.roundRect(W / 2 - 120, curY - 8, 240, 40, 20);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(245,158,11,0.4)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.roundRect(W / 2 - 120, curY - 8, 240, 40, 20);
+      ctx.stroke();
+      ctx.fillStyle = '#fbbf24';
+      ctx.font = 'bold 18px -apple-system, sans-serif';
+      ctx.fillText(rank, W / 2, curY + 18);
+      curY += 50;
+
+      // Fun facts row
+      ctx.fillStyle = '#475569';
+      ctx.font = '14px -apple-system, sans-serif';
+      ctx.fillText('绕地球 ' + earthPct + '% · 到月球 ' + moonPct + '%', W / 2, curY);
+      curY += 16;
+
+      // Progress bar
+      const barX = 100, barW = W - 200;
+      ctx.fillStyle = '#1e293b';
+      ctx.beginPath(); ctx.roundRect(barX, curY, barW, 8, 4); ctx.fill();
       ctx.fillStyle = '#f59e0b';
-      const pct = Math.min(totalKm / earthCircum, 1);
-      ctx.beginPath(); ctx.roundRect(barX, barY, barW * pct, 10, 5); ctx.fill();
+      const pctEarth = Math.min(totalKm / earthCircum, 1);
+      if (pctEarth > 0) { ctx.beginPath(); ctx.roundRect(barX, curY, Math.max(barW * pctEarth, 8), 8, 4); ctx.fill(); }
+      curY += 30;
 
-      // Footer with QR code
-      drawShareFooter(ctx, W, H - 120, 80);
+      // === Top cities ===
+      if (topCities.length > 0) {
+        // Divider
+        ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+        ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(60, curY); ctx.lineTo(W - 60, curY); ctx.stroke();
+        curY += 24;
 
-      // Show preview
-      sc.toBlob(blob => {
+        ctx.fillStyle = '#e2e8f0';
+        ctx.font = 'bold 16px -apple-system, sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText('常去城市', 60, curY);
+        curY += 16;
+
+        const maxCount = topCities[0][1];
+        topCities.forEach(([city, count]) => {
+          curY += 26;
+          // Bar
+          const bw = (count / maxCount) * (W - 240);
+          const barGrad = ctx.createLinearGradient(120, 0, 120 + bw, 0);
+          barGrad.addColorStop(0, 'rgba(245,158,11,0.5)');
+          barGrad.addColorStop(1, 'rgba(245,158,11,0.1)');
+          ctx.fillStyle = barGrad;
+          ctx.beginPath(); ctx.roundRect(120, curY - 10, bw, 20, 4); ctx.fill();
+          // City name
+          ctx.fillStyle = '#d1d5db';
+          ctx.font = '14px -apple-system, sans-serif';
+          ctx.textAlign = 'left';
+          ctx.fillText(city, 60, curY + 4);
+          // Count
+          ctx.fillStyle = '#9ca3af';
+          ctx.font = '13px -apple-system, sans-serif';
+          ctx.textAlign = 'right';
+          ctx.fillText(count + '次', W - 60, curY + 4);
+        });
+        curY += 20;
+      }
+
+      // === Footer with QR ===
+      curY += 10;
+      ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(60, curY); ctx.lineTo(W - 60, curY); ctx.stroke();
+      curY += 10;
+      drawShareFooter(ctx, W, curY, 80);
+
+      // Crop to actual content
+      const finalH = Math.min(curY + 110, H);
+      const finalCanvas = document.createElement('canvas');
+      finalCanvas.width = W * dpr;
+      finalCanvas.height = finalH * dpr;
+      const fctx = finalCanvas.getContext('2d');
+      fctx.drawImage(sc, 0, 0);
+
+      finalCanvas.toBlob(blob => {
         const filename = '旅途纵横-足迹地图-' + new Date().toISOString().slice(0, 10) + '.png';
         const text = flights.length + '次飞行 · ' + trains.length + '次高铁 · ' + fmtDist(totalKm) + ' · ' + rank;
         showSharePreview(blob, filename, '我的旅行足迹', text);
