@@ -464,6 +464,23 @@ date,type,fromCode,toCode,fromStation,toStation,flightNo,trainNo,airline,depTime
 <!-- Toast -->
 <div id="toast" class="toast"></div>
 
+<!-- Share Preview Modal -->
+<div id="sharePreviewModal" class="modal" style="display:none">
+  <div class="modal-content" style="max-width:420px;border-radius:16px;padding:16px;text-align:center">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <span style="font-size:16px;font-weight:600;color:var(--text)">分享预览</span>
+      <button class="btn-icon" onclick="closeModal('sharePreviewModal')" style="font-size:20px">×</button>
+    </div>
+    <div id="sharePreviewImg" style="max-height:60vh;overflow-y:auto;border-radius:8px;background:var(--bg2)">
+      <img id="sharePreviewImage" style="width:100%;border-radius:8px" />
+    </div>
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <button id="btnShareSave" class="btn" style="flex:1;padding:12px;font-size:14px">💾 保存图片</button>
+      <button id="btnShareSend" class="btn btn-primary" style="flex:1;padding:12px;font-size:14px">📤 分享</button>
+    </div>
+  </div>
+</div>
+
 <script src="data/airports.js"></script>
 <script src="js/utils.js"></script>
 <script src="js/store.js"></script>

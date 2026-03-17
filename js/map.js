@@ -1047,29 +1047,12 @@ const TravelMap = {
       ctx.font = '13px -apple-system, sans-serif';
       ctx.fillText('jusaka.github.io/travel-log', W / 2, H - 38);
 
-      // Export with Web Share API support
+      // Show preview
       sc.toBlob(blob => {
-        const file = new File([blob], 'travel-log-map.png', { type: 'image/png' });
-        if (navigator.canShare && navigator.canShare({ files: [file] })) {
-          navigator.share({
-            title: '我的旅行足迹',
-            text: flights.length + '次飞行 · ' + trains.length + '次高铁 · ' + fmtDist(totalKm) + ' · ' + rank,
-            files: [file]
-          }).then(() => showToast('📤 已分享！'))
-            .catch(e => { if (e.name !== 'AbortError') this._downloadBlob(blob); });
-        } else {
-          this._downloadBlob(blob);
-        }
+        const filename = '旅途纵横-足迹地图-' + new Date().toISOString().slice(0, 10) + '.png';
+        const text = flights.length + '次飞行 · ' + trains.length + '次高铁 · ' + fmtDist(totalKm) + ' · ' + rank;
+        showSharePreview(blob, filename, '我的旅行足迹', text);
       }, 'image/png');
     }, 100);
-  },
-
-  _downloadBlob(blob) {
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = '旅途纵横-足迹地图-' + new Date().toISOString().slice(0, 10) + '.png';
-    a.click();
-    URL.revokeObjectURL(a.href);
-    showToast('📤 图片已保存');
   },
 };

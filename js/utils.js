@@ -273,3 +273,42 @@ function detectAirline(flightNo) {
   const code = flightNo.replace(/\d/g, '').toUpperCase();
   return AIRLINES[code] ? code : '';
 }
+
+// Share preview: show image in modal, then share or download
+function showSharePreview(blob, filename, shareTitle, shareText) {
+  const url = URL.createObjectURL(blob);
+  const img = document.getElementById('sharePreviewImage');
+  img.src = url;
+  openModal('sharePreviewModal');
+
+  // Save button
+  document.getElementById('btnShareSave').onclick = () => {
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    showToast('📤 图片已保存');
+  };
+
+  // Share button
+  const btnShare = document.getElementById('btnShareSend');
+  const file = new File([blob], filename, { type: 'image/png' });
+  if (navigator.canShare && navigator.canShare({ files: [file] })) {
+    btnShare.style.display = '';
+    btnShare.onclick = () => {
+      navigator.share({
+        title: shareTitle || '',
+        text: shareText || '',
+        files: [file]
+      }).then(() => {
+        closeModal('sharePreviewModal');
+        showToast('📤 已分享！');
+      }).catch(e => {
+        if (e.name !== 'AbortError') showToast('分享失败，请手动保存');
+      });
+    };
+  } else {
+    // No Web Share API, hide share button
+    btnShare.style.display = 'none';
+  }
+}
