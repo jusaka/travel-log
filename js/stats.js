@@ -170,6 +170,11 @@ const Stats = {
       </div>`;
     }
 
+    // Share stats button
+    html += `<div style="text-align:center;padding:16px 0 80px">
+      <button class="btn btn-primary" onclick="Stats.generateShareImage()" style="width:100%;padding:14px;font-size:15px;font-weight:600">📤 分享统计</button>
+    </div>`;
+
     grid.innerHTML = html;
   },
 
@@ -384,5 +389,224 @@ const Stats = {
       </div>
       <canvas id="${canvasId}" style="width:100%;height:120px;display:block"></canvas>
     </div>`;
+  },
+
+  generateShareImage() {
+    const stats = Store.getStats();
+    if (stats.totalTrips === 0) { showToast('暂无数据'); return; }
+
+    const dpr = 2;
+    const W = 400;
+    const H = 500;
+    const canvas = document.createElement('canvas');
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
+    const ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+
+    // Background
+    const bg = ctx.createLinearGradient(0, 0, 0, H);
+    bg.addColorStop(0, '#0c1929');
+    bg.addColorStop(0.4, '#111d35');
+    bg.addColorStop(1, '#080d18');
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, W, H);
+
+    // Stars
+    ctx.globalAlpha = 0.25;
+    for (let i = 0; i < 35; i++) {
+      ctx.beginPath();
+      ctx.arc(Math.random() * W, Math.random() * H, 0.5 + Math.random(), 0, Math.PI * 2);
+      ctx.fillStyle = '#fff';
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+
+    // Decorative glow
+    ctx.globalAlpha = 0.04;
+    ctx.beginPath(); ctx.arc(W * 0.8, 60, 120, 0, Math.PI * 2); ctx.fillStyle = '#3b82f6'; ctx.fill();
+    ctx.beginPath(); ctx.arc(W * 0.2, H * 0.6, 100, 0, Math.PI * 2); ctx.fillStyle = '#f59e0b'; ctx.fill();
+    ctx.globalAlpha = 1;
+
+    const drawDivider = (y) => {
+      const dg = ctx.createLinearGradient(40, 0, W - 40, 0);
+      dg.addColorStop(0, 'transparent');
+      dg.addColorStop(0.5, 'rgba(96,165,250,0.4)');
+      dg.addColorStop(1, 'transparent');
+      ctx.strokeStyle = dg;
+      ctx.lineWidth = 0.8;
+      ctx.beginPath(); ctx.moveTo(40, y); ctx.lineTo(W - 40, y); ctx.stroke();
+    };
+
+    let curY = 40;
+
+    // Header
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 22px -apple-system, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('✈️ 旅途纵横 · 出行统计', W / 2, curY);
+    curY += 20;
+    drawDivider(curY);
+
+    // Big number - total km
+    curY += 48;
+    ctx.fillStyle = '#60a5fa';
+    ctx.font = 'bold 52px -apple-system, sans-serif';
+    ctx.fillText(fmtDist(stats.totalKm), W / 2, curY);
+    curY += 18;
+    ctx.fillStyle = '#9ca3af';
+    ctx.font = '13px -apple-system, sans-serif';
+    ctx.fillText('总行程里程', W / 2, curY);
+
+    // Stats 2x2 grid
+    curY += 28;
+    const gridItems = [
+      { label: '✈ 飞行', value: stats.flightCount + '次', color: '#fbbf24' },
+      { label: '🚄 高铁', value: stats.trainCount + '次', color: '#34d399' },
+      { label: '城市', value: stats.cityCount + '个', color: '#f472b6' },
+      { label: '在路上', value: fmtDuration(stats.totalMins), color: '#c084fc' },
+    ];
+    const cellW = (W - 60) / 2;
+    const cellH = 56;
+    gridItems.forEach((s, i) => {
+      const col = i % 2, row = Math.floor(i / 2);
+      const cx = 30 + col * cellW + cellW / 2;
+      const cy = curY + row * cellH;
+      // Card bg
+      ctx.fillStyle = 'rgba(255,255,255,0.03)';
+      ctx.beginPath();
+      ctx.roundRect(30 + col * cellW + 4, cy - 12, cellW - 8, cellH - 6, 8);
+      ctx.fill();
+      ctx.fillStyle = s.color;
+      ctx.font = 'bold 20px -apple-system, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(s.value, cx, cy + 10);
+      ctx.fillStyle = '#6b7280';
+      ctx.font = '10px -apple-system, sans-serif';
+      ctx.fillText(s.label, cx, cy + 26);
+    });
+
+    // Fun facts
+    curY += cellH * 2 + 14;
+    drawDivider(curY);
+    curY += 22;
+    ctx.fillStyle = '#e5e7eb';
+    ctx.font = 'bold 14px -apple-system, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText('🌍 趣味对比', 28, curY);
+
+    const earthRounds = (stats.totalKm / 40075).toFixed(2);
+    const moonPct = ((stats.totalKm / 384400) * 100).toFixed(1);
+    const funFacts = [
+      ['绕地球', earthRounds + ' 圈'],
+      ['到月球', moonPct + '%'],
+      ['马拉松', Math.round(stats.totalKm / 42.195) + ' 场'],
+    ];
+    funFacts.forEach(([label, val]) => {
+      curY += 22;
+      ctx.fillStyle = '#6b7280';
+      ctx.font = '12px -apple-system, sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText(label, 28, curY);
+      ctx.fillStyle = '#d1d5db';
+      ctx.font = 'bold 12px -apple-system, sans-serif';
+      ctx.textAlign = 'right';
+      ctx.fillText(val, W - 28, curY);
+    });
+
+    // Top cities
+    if (stats.topCities.length > 0) {
+      curY += 20;
+      drawDivider(curY);
+      curY += 22;
+      ctx.fillStyle = '#e5e7eb';
+      ctx.font = 'bold 14px -apple-system, sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText('🏙️ 常去城市 Top3', 28, curY);
+
+      const top3 = stats.topCities.slice(0, 3);
+      const maxC = top3[0][1];
+      top3.forEach(([city, count]) => {
+        curY += 24;
+        const bw = (count / maxC) * (W - 160);
+        const barGrad = ctx.createLinearGradient(80, 0, 80 + bw, 0);
+        barGrad.addColorStop(0, 'rgba(96,165,250,0.6)');
+        barGrad.addColorStop(1, 'rgba(96,165,250,0.1)');
+        ctx.fillStyle = barGrad;
+        ctx.beginPath();
+        ctx.roundRect(80, curY - 10, bw, 18, 4);
+        ctx.fill();
+        ctx.fillStyle = '#d1d5db';
+        ctx.font = '12px -apple-system, sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText(city, 28, curY + 3);
+        ctx.fillStyle = '#9ca3af';
+        ctx.font = '11px -apple-system, sans-serif';
+        ctx.textAlign = 'right';
+        ctx.fillText(count + '次', W - 28, curY + 3);
+      });
+    }
+
+    // Flight vs train ratio bar
+    if (stats.flightCount > 0 && stats.trainCount > 0) {
+      curY += 22;
+      drawDivider(curY);
+      curY += 22;
+      ctx.fillStyle = '#e5e7eb';
+      ctx.font = 'bold 14px -apple-system, sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText('🥧 出行方式', 28, curY);
+      curY += 18;
+      const total = stats.flightCount + stats.trainCount;
+      const flightPct = stats.flightCount / total;
+      const barX = 28, barY = curY, barH = 16, barTotalW = W - 56;
+      // Flight portion
+      ctx.fillStyle = 'rgba(251,191,36,0.7)';
+      ctx.beginPath();
+      ctx.roundRect(barX, barY, barTotalW * flightPct, barH, flightPct >= 1 ? 6 : [6, 0, 0, 6]);
+      ctx.fill();
+      // Train portion
+      ctx.fillStyle = 'rgba(52,211,153,0.7)';
+      ctx.beginPath();
+      ctx.roundRect(barX + barTotalW * flightPct, barY, barTotalW * (1 - flightPct), barH, flightPct <= 0 ? 6 : [0, 6, 6, 0]);
+      ctx.fill();
+      curY += barH + 14;
+      ctx.font = '11px -apple-system, sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillStyle = '#fbbf24';
+      ctx.fillText(`✈ ${Math.round(flightPct * 100)}%`, barX, curY);
+      ctx.textAlign = 'right';
+      ctx.fillStyle = '#34d399';
+      ctx.fillText(`🚄 ${Math.round((1 - flightPct) * 100)}%`, barX + barTotalW, curY);
+    }
+
+    // Footer
+    curY += 24;
+    drawDivider(curY);
+    curY += 20;
+    ctx.fillStyle = '#1e293b';
+    ctx.beginPath();
+    ctx.roundRect(28, curY - 4, W - 56, 48, 10);
+    ctx.fill();
+    ctx.fillStyle = '#f59e0b';
+    ctx.font = 'bold 13px -apple-system, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('✈️ 旅途纵横 · 记录每一次出发', W / 2, curY + 14);
+    ctx.fillStyle = '#64748b';
+    ctx.font = '10px -apple-system, sans-serif';
+    ctx.fillText('jusaka.github.io/travel-log', W / 2, curY + 32);
+
+    // Crop canvas to actual content height
+    const finalH = Math.min(curY + 60, H);
+    const finalCanvas = document.createElement('canvas');
+    finalCanvas.width = W * dpr;
+    finalCanvas.height = finalH * dpr;
+    const fctx = finalCanvas.getContext('2d');
+    fctx.drawImage(canvas, 0, 0);
+
+    finalCanvas.toBlob(blob => {
+      const text = `${stats.totalTrips}次出行 · ${fmtDist(stats.totalKm)} · ${stats.cityCount}个城市`;
+      showSharePreview(blob, '旅途纵横-出行统计.png', '我的出行统计', text);
+    }, 'image/png');
   },
 };

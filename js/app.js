@@ -488,6 +488,50 @@
     }
   };
 
+  // ===== PWA Install Banner =====
+  let _deferredPrompt = null;
+
+  // Listen for beforeinstallprompt
+  window.addEventListener('beforeinstallprompt', e => {
+    e.preventDefault();
+    _deferredPrompt = e;
+  });
+
+  // Check if already installed (standalone mode)
+  function _isPWAInstalled() {
+    return window.matchMedia('(display-mode: standalone)').matches ||
+           window.navigator.standalone === true;
+  }
+
+  // Show banner after 3 minutes if conditions met
+  function _maybeShowPWABanner() {
+    if (_isPWAInstalled()) return;
+    if (localStorage.getItem('tl_pwa_dismissed')) return;
+    if (!_deferredPrompt) return;
+    const banner = document.getElementById('pwaBanner');
+    if (banner) banner.style.display = '';
+  }
+
+  setTimeout(_maybeShowPWABanner, 3 * 60 * 1000);
+
+  // Install button
+  document.getElementById('pwaBannerInstall').onclick = async () => {
+    if (!_deferredPrompt) return;
+    _deferredPrompt.prompt();
+    const result = await _deferredPrompt.userChoice;
+    if (result.outcome === 'accepted') {
+      showToast('安装成功 🎉');
+    }
+    _deferredPrompt = null;
+    document.getElementById('pwaBanner').style.display = 'none';
+  };
+
+  // Close button
+  document.getElementById('pwaBannerClose').onclick = () => {
+    document.getElementById('pwaBanner').style.display = 'none';
+    localStorage.setItem('tl_pwa_dismissed', '1');
+  };
+
   // Render initial trip list
   Trips.render();
 })();

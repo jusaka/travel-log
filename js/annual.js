@@ -2,6 +2,7 @@
 
 const Annual = {
   year: new Date().getFullYear(),
+  _cachedAchievements: [],
 
   init() {
     document.getElementById('annualYear').textContent = this.year;
@@ -242,16 +243,18 @@ const Annual = {
 
     // Achievements
     const achievements = this._getAchievements(trips, flights, trains, totalKm, cities, airports);
+    this._cachedAchievements = achievements;
     if (achievements.length > 0) {
       html += `<div class="annual-section">
         <h3>🏅 成就解锁</h3>
         <div style="display:flex;flex-wrap:wrap;gap:8px">
-          ${achievements.map(a => `<div style="background:${a.unlocked ? 'linear-gradient(135deg,rgba(251,191,36,0.15),rgba(245,158,11,0.08))' : 'var(--bg2)'};border:1px solid ${a.unlocked ? 'rgba(251,191,36,0.4)' : 'var(--bg3)'};border-radius:12px;padding:10px 14px;text-align:center;min-width:90px;flex:1;opacity:${a.unlocked ? '1' : '0.4'}">
+          ${achievements.map((a, idx) => `<div style="background:${a.unlocked ? 'linear-gradient(135deg,rgba(251,191,36,0.15),rgba(245,158,11,0.08))' : 'var(--bg2)'};border:1px solid ${a.unlocked ? 'rgba(251,191,36,0.4)' : 'var(--bg3)'};border-radius:12px;padding:10px 14px;text-align:center;min-width:90px;flex:1;opacity:${a.unlocked ? '1' : '0.4'}${a.unlocked ? ';cursor:pointer' : ''}" ${a.unlocked ? `onclick="Annual.shareAchievement(${idx})"` : ''}>
             <div style="font-size:24px;margin-bottom:4px">${a.icon}</div>
             <div style="font-size:11px;font-weight:600;color:${a.unlocked ? 'var(--flight)' : 'var(--text3)'}">${a.name}</div>
             <div style="font-size:9px;color:var(--text3);margin-top:2px">${a.desc}</div>
           </div>`).join('')}
         </div>
+        <div style="font-size:10px;color:var(--text3);margin-top:8px;text-align:center">💡 点击已解锁徽章可生成分享卡片</div>
       </div>`;
     }
 
@@ -639,6 +642,108 @@ const Annual = {
       const filename = `旅途纵横-${this.year}年报.png`;
       const text = `${this.year}年 · ${trips.length}次出行 · ${fmtDist(totalKm)} · 到访${cities.size}个城市`;
       showSharePreview(blob, filename, `我的${this.year}年旅行报告`, text);
+    }, 'image/png');
+  },
+
+  shareAchievement(idx) {
+    const a = this._cachedAchievements[idx];
+    if (!a || !a.unlocked) return;
+
+    const dpr = 2;
+    const W = 600;
+    const H = 400;
+    const canvas = document.createElement('canvas');
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
+    const ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+
+    // Background - dark gradient
+    const bg = ctx.createLinearGradient(0, 0, W, H);
+    bg.addColorStop(0, '#0c1929');
+    bg.addColorStop(0.5, '#1a1a2e');
+    bg.addColorStop(1, '#16213e');
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, W, H);
+
+    // Decorative glow
+    ctx.globalAlpha = 0.08;
+    ctx.beginPath();
+    ctx.arc(W / 2, H / 2 - 30, 160, 0, Math.PI * 2);
+    ctx.fillStyle = '#fbbf24';
+    ctx.fill();
+    ctx.globalAlpha = 0.05;
+    ctx.beginPath();
+    ctx.arc(W / 2, H / 2 - 30, 220, 0, Math.PI * 2);
+    ctx.fillStyle = '#f59e0b';
+    ctx.fill();
+    ctx.globalAlpha = 1;
+
+    // Stars
+    ctx.globalAlpha = 0.3;
+    for (let i = 0; i < 30; i++) {
+      const sx = Math.random() * W, sy = Math.random() * H;
+      ctx.beginPath();
+      ctx.arc(sx, sy, 0.5 + Math.random() * 1, 0, Math.PI * 2);
+      ctx.fillStyle = '#fff';
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+
+    // Badge circle background
+    ctx.beginPath();
+    ctx.arc(W / 2, 130, 60, 0, Math.PI * 2);
+    const circleGrad = ctx.createRadialGradient(W / 2, 130, 10, W / 2, 130, 60);
+    circleGrad.addColorStop(0, 'rgba(251,191,36,0.25)');
+    circleGrad.addColorStop(1, 'rgba(251,191,36,0.05)');
+    ctx.fillStyle = circleGrad;
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(251,191,36,0.5)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Emoji icon
+    ctx.font = '56px -apple-system, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(a.icon, W / 2, 152);
+
+    // Achievement name
+    ctx.fillStyle = '#fbbf24';
+    ctx.font = 'bold 28px -apple-system, sans-serif';
+    ctx.fillText(a.name, W / 2, 230);
+
+    // Description
+    ctx.fillStyle = '#9ca3af';
+    ctx.font = '16px -apple-system, sans-serif';
+    ctx.fillText(a.desc, W / 2, 262);
+
+    // Unlocked status
+    ctx.fillStyle = '#34d399';
+    ctx.font = 'bold 14px -apple-system, sans-serif';
+    ctx.fillText('✅ 已解锁', W / 2, 296);
+
+    // Divider
+    const dg = ctx.createLinearGradient(100, 0, W - 100, 0);
+    dg.addColorStop(0, 'transparent');
+    dg.addColorStop(0.5, 'rgba(251,191,36,0.4)');
+    dg.addColorStop(1, 'transparent');
+    ctx.strokeStyle = dg;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(100, 318);
+    ctx.lineTo(W - 100, 318);
+    ctx.stroke();
+
+    // Footer
+    ctx.fillStyle = '#6b7280';
+    ctx.font = '13px -apple-system, sans-serif';
+    ctx.fillText(`✈️ 旅途纵横 · ${this.year}年度成就`, W / 2, 348);
+    ctx.fillStyle = '#4b5563';
+    ctx.font = '11px -apple-system, sans-serif';
+    ctx.fillText('jusaka.github.io/travel-log', W / 2, 372);
+
+    canvas.toBlob(blob => {
+      showSharePreview(blob, `旅途纵横-成就-${a.name}.png`, `我解锁了「${a.name}」成就！`, `${a.icon} ${a.name} - ${a.desc}`);
     }, 'image/png');
   },
 

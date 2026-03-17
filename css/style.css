@@ -286,6 +286,16 @@ textarea{resize:none;font-family:inherit}
   .annual-hero .big-num{font-size:40px}
 }
 
+/* ===== PWA Install Banner ===== */
+.pwa-banner{position:fixed;bottom:calc(var(--tab-h) + 12px + var(--safe-bottom));left:12px;right:12px;z-index:150;animation:slideIn .4s ease}
+.pwa-banner-content{display:flex;align-items:center;justify-content:space-between;gap:10px;background:rgba(17,24,39,0.92);border:1px solid var(--accent);border-radius:14px;padding:12px 14px;backdrop-filter:blur(12px);box-shadow:0 4px 24px rgba(0,0,0,0.4)}
+.light .pwa-banner-content{background:rgba(255,255,255,0.95);box-shadow:0 4px 24px rgba(0,0,0,0.12)}
+.pwa-banner-text{font-size:13px;color:var(--text);flex:1;min-width:0}
+.pwa-banner-actions{display:flex;align-items:center;gap:6px;flex-shrink:0}
+.pwa-banner-btn{padding:8px 16px;font-size:13px;min-height:44px;border-radius:10px}
+.pwa-banner-close{background:none;border:none;color:var(--text3);font-size:22px;cursor:pointer;padding:8px;min-width:44px;min-height:44px;display:flex;align-items:center;justify-content:center;border-radius:50%}
+.pwa-banner-close:active{background:var(--bg3)}
+
 /* Form validation error highlight */
 .form-error {
   outline: 2px solid #ef4444 !important;
