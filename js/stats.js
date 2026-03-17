@@ -396,8 +396,8 @@ const Stats = {
     if (stats.totalTrips === 0) { showToast('暂无数据'); return; }
 
     const dpr = 2;
-    const W = 400;
-    const H = 500;
+    const W = 800;
+    const H = 1200;
     const canvas = document.createElement('canvas');
     canvas.width = W * dpr;
     canvas.height = H * dpr;
@@ -411,6 +411,11 @@ const Stats = {
     bg.addColorStop(1, '#080d18');
     ctx.fillStyle = bg;
     ctx.fillRect(0, 0, W, H);
+
+    // Border (match other share cards)
+    ctx.strokeStyle = 'rgba(245,158,11,0.2)';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(20, 20, W - 40, H - 40);
 
     // Stars
     ctx.globalAlpha = 0.25;
@@ -442,7 +447,7 @@ const Stats = {
 
     // Header
     ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 22px -apple-system, sans-serif';
+    ctx.font = 'bold 30px -apple-system, sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText('✈️ 旅途纵横 · 出行统计', W / 2, curY);
     curY += 20;
@@ -453,9 +458,9 @@ const Stats = {
     ctx.fillStyle = '#60a5fa';
     ctx.font = 'bold 52px -apple-system, sans-serif';
     ctx.fillText(fmtDist(stats.totalKm), W / 2, curY);
-    curY += 18;
+    curY += 24;
     ctx.fillStyle = '#9ca3af';
-    ctx.font = '13px -apple-system, sans-serif';
+    ctx.font = '15px -apple-system, sans-serif';
     ctx.fillText('总行程里程', W / 2, curY);
 
     // Stats 2x2 grid
@@ -466,8 +471,8 @@ const Stats = {
       { label: '城市', value: stats.cityCount + '个', color: '#f472b6' },
       { label: '在路上', value: fmtDuration(stats.totalMins), color: '#c084fc' },
     ];
-    const cellW = (W - 60) / 2;
-    const cellH = 56;
+    const cellW = (W - 80) / 2;
+    const cellH = 80;
     gridItems.forEach((s, i) => {
       const col = i % 2, row = Math.floor(i / 2);
       const cx = 30 + col * cellW + cellW / 2;
@@ -478,20 +483,20 @@ const Stats = {
       ctx.roundRect(30 + col * cellW + 4, cy - 12, cellW - 8, cellH - 6, 8);
       ctx.fill();
       ctx.fillStyle = s.color;
-      ctx.font = 'bold 20px -apple-system, sans-serif';
+      ctx.font = 'bold 28px -apple-system, sans-serif';
       ctx.textAlign = 'center';
       ctx.fillText(s.value, cx, cy + 10);
       ctx.fillStyle = '#6b7280';
-      ctx.font = '10px -apple-system, sans-serif';
+      ctx.font = '15px -apple-system, sans-serif';
       ctx.fillText(s.label, cx, cy + 26);
     });
 
     // Fun facts
     curY += cellH * 2 + 14;
     drawDivider(curY);
-    curY += 22;
+    curY += 28;
     ctx.fillStyle = '#e5e7eb';
-    ctx.font = 'bold 14px -apple-system, sans-serif';
+    ctx.font = 'bold 18px -apple-system, sans-serif';
     ctx.textAlign = 'left';
     ctx.fillText('🌍 趣味对比', 28, curY);
 
@@ -503,13 +508,13 @@ const Stats = {
       ['马拉松', Math.round(stats.totalKm / 42.195) + ' 场'],
     ];
     funFacts.forEach(([label, val]) => {
-      curY += 22;
+      curY += 28;
       ctx.fillStyle = '#6b7280';
-      ctx.font = '12px -apple-system, sans-serif';
+      ctx.font = '14px -apple-system, sans-serif';
       ctx.textAlign = 'left';
       ctx.fillText(label, 28, curY);
       ctx.fillStyle = '#d1d5db';
-      ctx.font = 'bold 12px -apple-system, sans-serif';
+      ctx.font = 'bold 14px -apple-system, sans-serif';
       ctx.textAlign = 'right';
       ctx.fillText(val, W - 28, curY);
     });
@@ -518,16 +523,16 @@ const Stats = {
     if (stats.topCities.length > 0) {
       curY += 20;
       drawDivider(curY);
-      curY += 22;
+      curY += 28;
       ctx.fillStyle = '#e5e7eb';
-      ctx.font = 'bold 14px -apple-system, sans-serif';
+      ctx.font = 'bold 18px -apple-system, sans-serif';
       ctx.textAlign = 'left';
       ctx.fillText('🏙️ 常去城市 Top3', 28, curY);
 
       const top3 = stats.topCities.slice(0, 3);
       const maxC = top3[0][1];
       top3.forEach(([city, count]) => {
-        curY += 24;
+        curY += 30;
         const bw = (count / maxC) * (W - 160);
         const barGrad = ctx.createLinearGradient(80, 0, 80 + bw, 0);
         barGrad.addColorStop(0, 'rgba(96,165,250,0.6)');
@@ -537,11 +542,11 @@ const Stats = {
         ctx.roundRect(80, curY - 10, bw, 18, 4);
         ctx.fill();
         ctx.fillStyle = '#d1d5db';
-        ctx.font = '12px -apple-system, sans-serif';
+        ctx.font = '14px -apple-system, sans-serif';
         ctx.textAlign = 'left';
         ctx.fillText(city, 28, curY + 3);
         ctx.fillStyle = '#9ca3af';
-        ctx.font = '11px -apple-system, sans-serif';
+        ctx.font = '13px -apple-system, sans-serif';
         ctx.textAlign = 'right';
         ctx.fillText(count + '次', W - 28, curY + 3);
       });
@@ -549,14 +554,14 @@ const Stats = {
 
     // Flight vs train ratio bar
     if (stats.flightCount > 0 && stats.trainCount > 0) {
-      curY += 22;
+      curY += 28;
       drawDivider(curY);
-      curY += 22;
+      curY += 28;
       ctx.fillStyle = '#e5e7eb';
-      ctx.font = 'bold 14px -apple-system, sans-serif';
+      ctx.font = 'bold 18px -apple-system, sans-serif';
       ctx.textAlign = 'left';
       ctx.fillText('🥧 出行方式', 28, curY);
-      curY += 18;
+      curY += 24;
       const total = stats.flightCount + stats.trainCount;
       const flightPct = stats.flightCount / total;
       const barX = 28, barY = curY, barH = 16, barTotalW = W - 56;
@@ -571,7 +576,7 @@ const Stats = {
       ctx.roundRect(barX + barTotalW * flightPct, barY, barTotalW * (1 - flightPct), barH, flightPct <= 0 ? 6 : [0, 6, 6, 0]);
       ctx.fill();
       curY += barH + 14;
-      ctx.font = '11px -apple-system, sans-serif';
+      ctx.font = '13px -apple-system, sans-serif';
       ctx.textAlign = 'left';
       ctx.fillStyle = '#fbbf24';
       ctx.fillText(`✈ ${Math.round(flightPct * 100)}%`, barX, curY);
@@ -581,14 +586,14 @@ const Stats = {
     }
 
     // Footer with QR
-    curY += 24;
+    curY += 30;
     drawDivider(curY);
     curY += 10;
     const footerH = drawShareFooter(ctx, W, curY, 60);
     curY += footerH;
 
     // Crop canvas to actual content height
-    const finalH = Math.min(curY + 60, H);
+    const finalH = curY + 20;
     const finalCanvas = document.createElement('canvas');
     finalCanvas.width = W * dpr;
     finalCanvas.height = finalH * dpr;
