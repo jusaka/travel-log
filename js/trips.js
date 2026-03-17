@@ -620,7 +620,8 @@ const Trips = {
       trips = trips.filter(t => {
         const searchFields = [
           t.fromCity, t.toCity, t.fromStation, t.toStation,
-          t.flightNo, t.trainNo, t.fromCode, t.toCode, t.note
+          t.flightNo, t.trainNo, t.fromCode, t.toCode,
+          t.airline, AIRLINES[t.airline]?.name, t.note
         ].filter(Boolean).join(' ');
         const lower = searchFields.toLowerCase();
         const pinyinFull = toPinyinFull(searchFields);
@@ -714,8 +715,12 @@ const Trips = {
       const no = isF ? (t.flightNo || '') : (t.trainNo || '');
       const dur = t.duration ? fmtDuration(t.duration) : '';
       const dist = t.distance ? fmtDist(t.distance) : '—';
-      const fromLabel = isF ? (t.fromCode || t.fromCity || '?') : (t.fromStation && t.fromStation !== t.fromCity ? t.fromStation : '');
-      const toLabel = isF ? (t.toCode || t.toCity || '?') : (t.toStation && t.toStation !== t.toCity ? t.toStation : '');
+      const fromLabel = isF
+        ? (t.fromCode || t.fromCity || '?')
+        : (t.fromStation && t.fromCity && !t.fromStation.includes(t.fromCity) ? t.fromStation : (t.fromCity ? '' : (t.fromStation || '?')));
+      const toLabel = isF
+        ? (t.toCode || t.toCity || '?')
+        : (t.toStation && t.toCity && !t.toStation.includes(t.toCity) ? t.toStation : (t.toCity ? '' : (t.toStation || '?')));
       const airline = isF && t.airline ? (AIRLINES[t.airline]?.name || t.airline) : '';
       const group = t.groupId ? Store.getGroupById(t.groupId) : null;
       const groupBadge = group ? `<span style="font-size:10px;background:rgba(59,130,246,0.15);color:var(--accent);padding:1px 6px;border-radius:8px;margin-left:6px">🏷️ ${escHtml(group.name)}</span>` : '';
@@ -731,7 +736,7 @@ const Trips = {
         <div class="trip-route" style="margin:10px 0">
           <div style="text-align:center">
             <div class="trip-city">${highlight(t.fromCity || t.fromStation || '?')}</div>
-            <div style="font-size:11px;color:var(--text3);margin-top:2px">${highlight(fromLabel)}</div>
+            ${fromLabel ? `<div style="font-size:11px;color:var(--text3);margin-top:2px">${highlight(fromLabel)}</div>` : ''}
           </div>
           <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px">
             <div style="font-size:10px;color:var(--text3)">${dur || ''}</div>
@@ -740,7 +745,7 @@ const Trips = {
           </div>
           <div style="text-align:center">
             <div class="trip-city">${highlight(t.toCity || t.toStation || '?')}</div>
-            <div style="font-size:11px;color:var(--text3);margin-top:2px">${highlight(toLabel)}</div>
+            ${toLabel ? `<div style="font-size:11px;color:var(--text3);margin-top:2px">${highlight(toLabel)}</div>` : ''}
           </div>
         </div>
         <div style="display:flex;justify-content:space-between;align-items:center;padding-top:8px;border-top:1px solid var(--bg3)">
