@@ -21,6 +21,15 @@
       const view = document.getElementById('view' + tab.dataset.tab.charAt(0).toUpperCase() + tab.dataset.tab.slice(1));
       if (view) view.classList.add('active');
       
+      // Clear search when leaving trips tab
+      if (tab.dataset.tab !== 'trips') {
+        const searchInput = document.getElementById('tripSearch');
+        if (searchInput && searchInput.value) {
+          searchInput.value = '';
+          searchInput.dispatchEvent(new Event('input'));
+        }
+      }
+
       // Refresh content on tab switch
       if (tab.dataset.tab === 'map') {
         TravelMap.resize();
@@ -50,8 +59,29 @@
   };
 
   // Settings
+  function _updateBackupTime() {
+    let el = document.getElementById('lastBackupTime');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'lastBackupTime';
+      el.style.cssText = 'font-size:11px;color:var(--text3);text-align:center;margin-top:4px';
+      const btn = document.getElementById('btnCopyData');
+      if (btn) btn.parentElement.insertBefore(el, btn.nextSibling);
+    }
+    const last = localStorage.getItem('tl_last_backup');
+    if (last) {
+      const d = new Date(last);
+      const pad = n => String(n).padStart(2, '0');
+      el.textContent = `上次备份: ${d.getFullYear()}.${d.getMonth()+1}.${d.getDate()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+      el.style.display = '';
+    } else {
+      el.style.display = 'none';
+    }
+  }
+
   document.getElementById('btnSettings').onclick = () => {
     _renderGroupList();
+    _updateBackupTime();
     openModal('settingsModal');
   };
 
@@ -196,6 +226,9 @@
       ta.focus();
       ta.select();
     }, 300);
+    // Record backup time
+    localStorage.setItem('tl_last_backup', new Date().toISOString());
+    _updateBackupTime();
   };
 
   // Paste from clipboard
@@ -208,14 +241,30 @@
         text = prompt('粘贴数据到这里（JSON格式）：');
       }
       if (!text || !text.trim()) { showToast('剪贴板为空'); return; }
-      const added = Store.importData(text.trim());
-      showToast(`导入成功，新增 ${added} 条行程 ✅`);
-      Trips.render();
-      TravelMap.draw();
-      TravelMap.updateSummary();
-      Stats.render();
-      Annual.render();
-      closeModal('settingsModal');
+      // Show confirmation with data overview before importing
+      const trimmed = text.trim();
+      const isCSV = trimmed.startsWith('date,') || /^\d{4}-\d{2}-\d{2}/.test(trimmed.split('\n')[0]);
+      const lines = trimmed.split('\n').filter(l => l.trim());
+      const approxCount = isCSV ? lines.length - 1 : lines.length;
+      const existingCount = Store.getAll().length;
+      let confirmMsg = `确定要恢复数据？\n\n📋 剪贴板数据：约 ${approxCount} 条行程`;
+      if (existingCount > 0) {
+        confirmMsg += `\n📦 当前已有：${existingCount} 条行程\n\n已有的不会重复导入`;
+      }
+      showConfirm(confirmMsg, () => {
+        try {
+          const added = Store.importData(trimmed);
+          showToast(`导入成功，新增 ${added} 条行程 ✅`);
+          Trips.render();
+          TravelMap.draw();
+          TravelMap.updateSummary();
+          Stats.render();
+          Annual.render();
+          closeModal('settingsModal');
+        } catch(err) {
+          showToast('导入失败：' + err.message);
+        }
+      });
     } catch(err) {
       showToast('导入失败：' + err.message);
     }
@@ -232,6 +281,8 @@
     a.click();
     URL.revokeObjectURL(url);
     showToast('数据已导出');
+    localStorage.setItem('tl_last_backup', new Date().toISOString());
+    _updateBackupTime();
   };
 
   // Import
@@ -297,6 +348,8 @@
     a.click();
     URL.revokeObjectURL(url);
     showToast('CSV已导出');
+    localStorage.setItem('tl_last_backup', new Date().toISOString());
+    _updateBackupTime();
   };
 
   // Add sample data

@@ -152,7 +152,11 @@ const Annual = {
       html += `<div class="stat-row"><span class="stat-label">最远一程</span><span class="stat-value">${escHtml(longestTrip.fromCity||'?')} → ${escHtml(longestTrip.toCity||'?')} (${fmtDist(longestTrip.distance||0)})</span></div>`;
     }
     if (topRoute) {
-      html += `<div class="stat-row"><span class="stat-label">最常路线</span><span class="stat-value">${escHtml(topRoute[0])} (${topRoute[1]}次)</span></div>`;
+      if (topRoute[1] > 1) {
+        html += `<div class="stat-row"><span class="stat-label">最常路线</span><span class="stat-value">${escHtml(topRoute[0])} (${topRoute[1]}次)</span></div>`;
+      } else {
+        html += `<div class="stat-row"><span class="stat-label">路线</span><span class="stat-value">${escHtml(topRoute[0])}</span></div>`;
+      }
     }
     if (topAirline) {
       html += `<div class="stat-row"><span class="stat-label">常飞航司</span><span class="stat-value">${AIRLINES[topAirline[0]]?.name || topAirline[0]} (${topAirline[1]}次)</span></div>`;
@@ -217,8 +221,10 @@ const Annual = {
         const icon = t.type === 'flight' ? '✈️' : '🚄';
         const no = t.type === 'flight' ? t.flightNo : t.trainNo;
         const km = t.distance ? `${fmtDist(t.distance)}` : '';
+        const from = t.fromCity || (t.fromCode && AIRPORTS[t.fromCode]?.city) || t.fromStation || '?';
+        const to = t.toCity || (t.toCode && AIRPORTS[t.toCode]?.city) || t.toStation || '?';
         html += `<div style="font-size:13px;color:var(--text2);padding:6px 0;border-bottom:1px solid var(--bg3);display:flex;justify-content:space-between;align-items:center">
-          <span>${icon} <span style="color:var(--text3);font-size:11px">${fmtDateShort(t.date)}</span> ${escHtml(t.fromCity||'?')} → ${escHtml(t.toCity||'?')} ${no ? '<span style="color:var(--text3);font-size:11px">'+escHtml(no)+'</span>' : ''}</span>
+          <span>${icon} <span style="color:var(--text3);font-size:11px">${fmtDateShort(t.date)}</span> ${escHtml(from)} → ${escHtml(to)} ${no ? '<span style="color:var(--text3);font-size:11px">'+escHtml(no)+'</span>' : ''}</span>
           <span style="font-size:12px;color:var(--accent2);font-weight:600;flex-shrink:0;margin-left:8px">${km}</span>
         </div>`;
       });
