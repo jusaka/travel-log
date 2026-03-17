@@ -196,6 +196,12 @@ function showToast(msg, duration = 2000) {
 
 // Modal management
 function openModal(id) {
+  // Close any open modal first (mutual exclusion)
+  document.querySelectorAll('.modal').forEach(m => {
+    if (m.style.display === 'flex' && m.id !== id && m.id !== 'confirmModal') {
+      m.style.display = 'none';
+    }
+  });
   document.getElementById(id).style.display = 'flex';
   document.body.style.overflow = 'hidden';
 }

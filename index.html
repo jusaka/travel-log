@@ -252,8 +252,8 @@ date,type,fromCode,toCode,fromStation,toStation,flightNo,trainNo,airline,depTime
         <button class="type-btn" data-type="train">🚄 高铁</button>
       </div>
 
-      <!-- Trip Group Selector -->
-      <div class="form-row" style="margin-bottom:12px">
+      <!-- Trip Group Selector (optional, hidden by default) -->
+      <div id="groupSelectorRow" class="form-row form-extra-shared" style="display:none;margin-bottom:12px">
         <div class="form-group">
           <label>归属旅行</label>
           <div style="display:flex;gap:6px">
@@ -290,6 +290,7 @@ date,type,fromCode,toCode,fromStation,toStation,flightNo,trainNo,airline,depTime
             <div class="search-results" id="fToResults"></div>
           </div>
         </div>
+        <div id="flightFormExtra" class="form-extra" style="display:none">
         <div class="form-row">
           <div class="form-group">
             <label>出发时间</label>
@@ -337,6 +338,8 @@ date,type,fromCode,toCode,fromStation,toStation,flightNo,trainNo,airline,depTime
           <label>备注</label>
           <textarea id="fNote" placeholder="旅途记忆..." rows="2"></textarea>
         </div>
+        </div>
+        <div class="form-toggle" onclick="toggleFormExtra('flight')">▾ 更多详情</div>
       </div>
 
       <!-- Train Form -->
@@ -364,6 +367,7 @@ date,type,fromCode,toCode,fromStation,toStation,flightNo,trainNo,airline,depTime
             <div class="search-results" id="tToResults"></div>
           </div>
         </div>
+        <div id="trainFormExtra" class="form-extra" style="display:none">
         <div class="form-row">
           <div class="form-group">
             <label>出发时间</label>
@@ -399,6 +403,8 @@ date,type,fromCode,toCode,fromStation,toStation,flightNo,trainNo,airline,depTime
           <label>备注</label>
           <textarea id="tNote" placeholder="旅途记忆..." rows="2"></textarea>
         </div>
+        </div>
+        <div class="form-toggle" onclick="toggleFormExtra('train')">▾ 更多详情</div>
       </div>
     </div>
     </div>
@@ -458,7 +464,7 @@ date,type,fromCode,toCode,fromStation,toStation,flightNo,trainNo,airline,depTime
       </div>
       <div class="settings-section">
         <h4>关于</h4>
-        <p class="about-text">旅途纵横 v7.9<br>记录每一次出发，珍藏每一段旅程<br><span style="color:var(--text3);font-size:11px;margin-top:4px;display:block">Made with ❤️ by 和珅</span></p>
+        <p class="about-text">旅途纵横 v8.0<br>记录每一次出发，珍藏每一段旅程<br><span style="color:var(--text3);font-size:11px;margin-top:4px;display:block">Made with ❤️ by 和珅</span></p>
       </div>
     </div>
   </div>

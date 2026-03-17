@@ -62,13 +62,15 @@
       container.innerHTML = '<div style="color:var(--text3);font-size:12px;padding:8px 0">暂无旅行组，添加行程时可创建</div>';
       return;
     }
+    const allTrips = Store.getAll();
     container.innerHTML = groups.map(g => {
-      const tripCount = g.tripIds.length;
-      const trips = g.tripIds.map(id => Store.getById(id)).filter(Boolean);
-      const totalKm = trips.reduce((s, t) => s + (t.distance || 0), 0);
-      const totalPrice = trips.reduce((s, t) => s + (t.price || 0), 0);
-      const dateRange = trips.length > 0 ? 
-        `${fmtDateShort(trips[trips.length-1].date)} ~ ${fmtDateShort(trips[0].date)}` : '';
+      const groupTrips = allTrips.filter(t => t.groupId === g.id);
+      const tripCount = groupTrips.length;
+      const totalKm = groupTrips.reduce((s, t) => s + (t.distance || 0), 0);
+      const totalPrice = groupTrips.reduce((s, t) => s + (t.price || 0), 0);
+      const sortedTrips = [...groupTrips].sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+      const dateRange = sortedTrips.length > 0 ? 
+        `${fmtDateShort(sortedTrips[0].date)} ~ ${fmtDateShort(sortedTrips[sortedTrips.length-1].date)}` : '';
       return `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px;background:var(--bg3);border-radius:8px;margin-bottom:6px">
         <div style="flex:1;min-width:0">
           <div style="font-size:13px;font-weight:600">🏷️ ${escHtml(g.name)}</div>
@@ -538,6 +540,24 @@
 
 // Onboarding functions
 let _onboardCurrentStep = 1;
+
+// Form progressive disclosure toggle
+function toggleFormExtra(type) {
+  const extra = document.getElementById(type + 'FormExtra');
+  const groupRow = document.getElementById('groupSelectorRow');
+  const toggleBtn = extra.parentElement.querySelector('.form-toggle');
+  if (extra.style.display === 'none') {
+    extra.style.display = '';
+    groupRow.style.display = '';
+    toggleBtn.textContent = '▴ 收起详情';
+    toggleBtn.classList.add('expanded');
+  } else {
+    extra.style.display = 'none';
+    groupRow.style.display = 'none';
+    toggleBtn.textContent = '▾ 更多详情';
+    toggleBtn.classList.remove('expanded');
+  }
+}
 
 function onboardNext(step) {
   _onboardCurrentStep = step;

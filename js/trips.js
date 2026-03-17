@@ -141,6 +141,8 @@ const Trips = {
     document.getElementById('fDate').value = lastDate;
     document.getElementById('tDate').value = lastDate;
     this._refreshGroupSelect();
+    // Collapse extra fields for new trips
+    this._collapseFormExtra();
     openModal('addTripModal');
   },
 
@@ -213,6 +215,8 @@ const Trips = {
     }
 
     this._refreshGroupSelect(trip.groupId);
+    // Expand extra fields when editing
+    this._expandFormExtra(trip.type);
     openModal('addTripModal');
   },
 
@@ -396,6 +400,26 @@ const Trips = {
       sel.appendChild(opt);
     });
     if (selectedId) sel.value = selectedId;
+  },
+
+  _collapseFormExtra() {
+    ['flight', 'train'].forEach(type => {
+      const extra = document.getElementById(type + 'FormExtra');
+      if (extra) extra.style.display = 'none';
+      const toggle = extra?.parentElement?.querySelector('.form-toggle');
+      if (toggle) { toggle.textContent = '▾ 更多详情'; toggle.classList.remove('expanded'); }
+    });
+    const groupRow = document.getElementById('groupSelectorRow');
+    if (groupRow) groupRow.style.display = 'none';
+  },
+
+  _expandFormExtra(type) {
+    const extra = document.getElementById(type + 'FormExtra');
+    if (extra) extra.style.display = '';
+    const toggle = extra?.parentElement?.querySelector('.form-toggle');
+    if (toggle) { toggle.textContent = '▴收起详情'; toggle.classList.add('expanded'); }
+    const groupRow = document.getElementById('groupSelectorRow');
+    if (groupRow) groupRow.style.display = '';
   },
 
   _prefillForm(trip) {
@@ -673,7 +697,7 @@ const Trips = {
       const typeBadge = isF ? '<span class="trip-type flight">✈️ 飞行</span>' : '<span class="trip-type train">🚄 高铁</span>';
       const no = isF ? (t.flightNo || '') : (t.trainNo || '');
       const dur = t.duration ? fmtDuration(t.duration) : '';
-      const dist = t.distance ? fmtDist(t.distance) : '';
+      const dist = t.distance ? fmtDist(t.distance) : '—';
       const fromLabel = isF ? (t.fromCode || t.fromCity || '?') : (t.fromStation || t.fromCity || '?');
       const toLabel = isF ? (t.toCode || t.toCity || '?') : (t.toStation || t.toCity || '?');
       const airline = isF && t.airline ? (AIRLINES[t.airline]?.name || t.airline) : '';

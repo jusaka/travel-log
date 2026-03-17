@@ -691,11 +691,13 @@ const TravelMap = {
     if (!found) {
       tooltip.style.display = 'none';
       tooltip.style.pointerEvents = 'none';
-    } else if (isTap) {
+    } else {
       tooltip.style.pointerEvents = 'auto';
-      // Auto-hide after 5s on mobile tap
-      clearTimeout(this._tooltipTimer);
-      this._tooltipTimer = setTimeout(() => { tooltip.style.display = 'none'; tooltip.style.pointerEvents = 'none'; }, 5000);
+      if (isTap) {
+        // Auto-hide after 5s on mobile tap
+        clearTimeout(this._tooltipTimer);
+        this._tooltipTimer = setTimeout(() => { tooltip.style.display = 'none'; tooltip.style.pointerEvents = 'none'; }, 5000);
+      }
     }
   },
 
