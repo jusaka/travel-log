@@ -65,8 +65,16 @@ function drawShareFooter(ctx, W, curY, qrSize) {
   ctx.fillStyle = '#374151';
   ctx.font = '11px -apple-system, sans-serif';
   ctx.fillText(SHARE_URL, 30, curY + 68);
+
+  // Nickname display
+  const nickname = localStorage.getItem('tl_nickname');
+  if (nickname) {
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = '12px -apple-system, sans-serif';
+    ctx.fillText('👤 ' + nickname, 30, curY + 85);
+  }
   
-  return qrSize + 40;
+  return qrSize + (nickname ? 58 : 40);
 }
 
 // Polyfill: CanvasRenderingContext2D.roundRect (Safari < 16, Chrome < 99)

@@ -12,12 +12,15 @@ const Store = {
       const raw = localStorage.getItem(STORE_KEY);
       this._trips = raw ? JSON.parse(raw) : [];
     } catch(e) {
+      console.error('Data load error:', e);
       this._trips = [];
+      showToast('⚠️ 数据加载异常，请尝试导入备份', 5000);
     }
     try {
       const raw = localStorage.getItem(GROUPS_KEY);
       this._groups = raw ? JSON.parse(raw) : [];
     } catch(e) {
+      console.error('Groups load error:', e);
       this._groups = [];
     }
     // Sort by date desc
@@ -30,7 +33,11 @@ const Store = {
       localStorage.setItem(STORE_KEY, data);
       localStorage.setItem(GROUPS_KEY, JSON.stringify(this._groups));
     } catch(e) {
-      showToast('⚠️ 存储空间不足，请导出备份数据！');
+      if (e.name === 'QuotaExceededError') {
+        showToast('⚠️ 存储空间不足，请导出数据后清理', 5000);
+      } else {
+        showToast('⚠️ 数据保存失败，请导出备份数据！');
+      }
       return;
     }
     // Warn if approaching localStorage limit (>4MB of ~5MB)

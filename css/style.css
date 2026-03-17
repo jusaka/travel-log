@@ -56,8 +56,8 @@ header{position:fixed;top:0;left:0;right:0;height:var(--header-h);display:flex;a
 .tab.active svg{opacity:1;stroke:var(--accent)}
 
 /* ===== Views ===== */
-.view{display:none;position:fixed;top:52px;bottom:56px;left:0;right:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;opacity:0;transition:opacity .15s ease}
-.view.active{display:block;opacity:1}
+.view{position:fixed;top:52px;bottom:56px;left:0;right:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;opacity:0;visibility:hidden;transition:opacity .2s ease,visibility 0s .2s}
+.view.active{opacity:1;visibility:visible;transition:opacity .2s ease,visibility 0s 0s}
 .view-header{position:sticky;top:0;background:var(--bg);z-index:10;padding:8px 12px;border-bottom:1px solid var(--bg3)}
 
 /* ===== Map ===== */

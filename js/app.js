@@ -1,3 +1,14 @@
+// ===== Global Error Boundary =====
+window.onerror = function(msg, url, line, col, err) {
+  console.error('Global error:', msg, url, line);
+  showToast('⚠️ 出了点问题，请刷新重试', 5000);
+  return true;
+};
+
+window.addEventListener('unhandledrejection', function(e) {
+  console.error('Unhandled promise:', e.reason);
+});
+
 // ===== App Entry Point =====
 
 (function() {
@@ -84,6 +95,18 @@
       el.style.display = 'none';
     }
   }
+
+  // Nickname persistence
+  const nicknameInput = document.getElementById('settingNickname');
+  nicknameInput.value = localStorage.getItem('tl_nickname') || '';
+  nicknameInput.addEventListener('input', () => {
+    const val = nicknameInput.value.trim();
+    if (val) {
+      localStorage.setItem('tl_nickname', val);
+    } else {
+      localStorage.removeItem('tl_nickname');
+    }
+  });
 
   document.getElementById('btnSettings').onclick = () => {
     _renderGroupList();
