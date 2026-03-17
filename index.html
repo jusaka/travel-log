@@ -45,20 +45,52 @@
 
 <!-- Onboarding Modal -->
 <div id="onboarding" class="modal" style="display:none">
-  <div class="modal-content" style="max-width:380px;border-radius:20px;padding:32px 24px;text-align:center">
+  <div class="modal-content" style="max-width:380px;border-radius:20px;padding:28px 24px;text-align:center">
+    <!-- Step 1: Welcome -->
     <div id="onboardStep1" class="onboard-step">
-      <div style="font-size:64px;margin-bottom:16px">✈️</div>
+      <div style="font-size:64px;margin-bottom:12px">✈️</div>
       <h2 style="font-size:22px;margin:0 0 8px;color:var(--text)">欢迎来到旅途纵横</h2>
-      <p style="font-size:14px;color:var(--text3);line-height:1.6;margin:0 0 24px">记录每一段飞行和高铁旅程<br>数据只存在你的浏览器里，完全隐私</p>
-      <button class="btn btn-primary" style="width:100%;padding:14px;font-size:15px" onclick="onboardNext(2)">开始体验</button>
-      <button class="btn" style="width:100%;padding:12px;font-size:13px;margin-top:8px;color:var(--text3)" onclick="onboardSample()">先看看示例数据</button>
+      <p style="font-size:14px;color:var(--text2);line-height:1.6;margin:0 0 20px">记录你的每一段飞行和高铁旅程<br>数据只存在你的浏览器里，完全隐私</p>
+      <button class="btn btn-primary" style="width:100%;padding:14px;font-size:15px" onclick="onboardNext(2)">开始体验 →</button>
     </div>
+    <!-- Step 2: Load sample data -->
     <div id="onboardStep2" class="onboard-step" style="display:none">
-      <div style="font-size:48px;margin-bottom:16px">🎫</div>
-      <h2 style="font-size:20px;margin:0 0 8px;color:var(--text)">添加你的第一段旅程</h2>
-      <p style="font-size:14px;color:var(--text3);line-height:1.6;margin:0 0 24px">支持飞行和高铁，输入航班号自动识别航司<br>也可以粘贴行程文本，AI帮你填写</p>
-      <button class="btn btn-primary" style="width:100%;padding:14px;font-size:15px" onclick="onboardAdd()">📝 添加行程</button>
-      <button class="btn" style="width:100%;padding:12px;font-size:13px;margin-top:8px;color:var(--text3)" onclick="onboardSkip()">稍后再说</button>
+      <div style="font-size:48px;margin-bottom:12px">🎁</div>
+      <h2 style="font-size:20px;margin:0 0 8px;color:var(--text)">先看看效果</h2>
+      <p style="font-size:13px;color:var(--text2);line-height:1.6;margin:0 0 16px">加载12条示例数据（含3个旅行组），<br>看看旅途纵横的完整功能</p>
+      <button class="btn btn-primary" style="width:100%;padding:14px;font-size:15px" onclick="onboardLoadSample()">📥 加载示例数据</button>
+      <button class="btn" style="width:100%;padding:10px;font-size:13px;margin-top:8px;color:var(--text3)" onclick="onboardNext(5)">跳过，我自己添加</button>
+    </div>
+    <!-- Step 3: Play animation -->
+    <div id="onboardStep3" class="onboard-step" style="display:none">
+      <div style="font-size:48px;margin-bottom:12px">▶️</div>
+      <h2 style="font-size:20px;margin:0 0 8px;color:var(--text)">观看轨迹回放</h2>
+      <p style="font-size:13px;color:var(--text2);line-height:1.6;margin:0 0 16px">点击地图右下角的 <b>▶️ 播放按钮</b><br>看你的旅途逐条绘制在地图上</p>
+      <button class="btn btn-primary" style="width:100%;padding:14px;font-size:15px" onclick="onboardPlayMap()">▶️ 播放轨迹回放</button>
+      <button class="btn" style="width:100%;padding:10px;font-size:13px;margin-top:8px;color:var(--text3)" onclick="onboardNext(4)">下一步</button>
+    </div>
+    <!-- Step 4: Share -->
+    <div id="onboardStep4" class="onboard-step" style="display:none">
+      <div style="font-size:48px;margin-bottom:12px">📤</div>
+      <h2 style="font-size:20px;margin:0 0 8px;color:var(--text)">分享你的足迹</h2>
+      <p style="font-size:13px;color:var(--text2);line-height:1.6;margin:0 0 16px">点击地图右下角的 <b>📤 分享按钮</b><br>生成精美卡片分享给朋友</p>
+      <button class="btn btn-primary" style="width:100%;padding:14px;font-size:15px" onclick="onboardShareMap()">📤 试试分享</button>
+      <button class="btn" style="width:100%;padding:10px;font-size:13px;margin-top:8px;color:var(--text3)" onclick="onboardFinish()">完成引导 🎉</button>
+    </div>
+    <!-- Step 5: Manual add (if skipped sample data) -->
+    <div id="onboardStep5" class="onboard-step" style="display:none">
+      <div style="font-size:48px;margin-bottom:12px">🎫</div>
+      <h2 style="font-size:20px;margin:0 0 8px;color:var(--text)">添加第一段旅程</h2>
+      <p style="font-size:13px;color:var(--text2);line-height:1.6;margin:0 0 16px">已预填一条北京→上海的航班<br>你可以直接保存或修改</p>
+      <button class="btn btn-primary" style="width:100%;padding:14px;font-size:15px" onclick="onboardAddTrip()">📝 添加行程</button>
+      <button class="btn" style="width:100%;padding:10px;font-size:13px;margin-top:8px;color:var(--text3)" onclick="onboardFinish()">稍后再说</button>
+    </div>
+    <!-- Step indicator -->
+    <div id="onboardDots" style="margin-top:16px;display:flex;justify-content:center;gap:6px">
+      <span class="onboard-dot active" data-step="1"></span>
+      <span class="onboard-dot" data-step="2"></span>
+      <span class="onboard-dot" data-step="3"></span>
+      <span class="onboard-dot" data-step="4"></span>
     </div>
   </div>
 </div>
@@ -426,7 +458,7 @@ date,type,fromCode,toCode,fromStation,toStation,flightNo,trainNo,airline,depTime
       </div>
       <div class="settings-section">
         <h4>关于</h4>
-        <p class="about-text">旅途纵横 v7.7<br>记录每一次出发，珍藏每一段旅程<br><span style="color:var(--text3);font-size:11px;margin-top:4px;display:block">Made with ❤️ by 和珅</span></p>
+        <p class="about-text">旅途纵横 v7.8<br>记录每一次出发，珍藏每一段旅程<br><span style="color:var(--text3);font-size:11px;margin-top:4px;display:block">Made with ❤️ by 和珅</span></p>
       </div>
     </div>
   </div>

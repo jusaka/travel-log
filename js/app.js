@@ -537,25 +537,135 @@
 })();
 
 // Onboarding functions
+let _onboardCurrentStep = 1;
+
 function onboardNext(step) {
+  _onboardCurrentStep = step;
   document.querySelectorAll('.onboard-step').forEach(s => s.style.display = 'none');
-  document.getElementById('onboardStep' + step).style.display = '';
+  const el = document.getElementById('onboardStep' + step);
+  if (el) el.style.display = '';
+  // Update dots
+  document.querySelectorAll('.onboard-dot').forEach((d, i) => {
+    d.classList.toggle('active', i + 1 === Math.min(step, 4));
+  });
+}
+
+function onboardLoadSample() {
+  _loadRichSampleData();
+  closeModal('onboarding');
+  // Short delay then show step 3
+  setTimeout(() => {
+    openModal('onboarding');
+    onboardNext(3);
+  }, 1500);
+}
+
+function onboardPlayMap() {
+  closeModal('onboarding');
+  // Switch to map tab and play
+  document.querySelector('.tab[data-tab="map"]').click();
+  setTimeout(() => {
+    TravelMap._togglePlayback();
+    // After animation (~10s), show step 4
+    setTimeout(() => {
+      openModal('onboarding');
+      onboardNext(4);
+    }, 12000);
+  }, 500);
+}
+
+function onboardShareMap() {
+  closeModal('onboarding');
+  document.querySelector('.tab[data-tab="map"]').click();
+  setTimeout(() => TravelMap.shareMap(), 500);
+  localStorage.setItem('tl_onboarded', '1');
+}
+
+function onboardAddTrip() {
+  localStorage.setItem('tl_onboarded', '1');
+  closeModal('onboarding');
+  // Open add trip form with pre-filled example
+  Trips.openAdd();
+  setTimeout(() => {
+    // Pre-fill date
+    const dateInput = document.getElementById('fDate');
+    if (dateInput) dateInput.value = new Date().toISOString().split('T')[0];
+    // Pre-fill flight number
+    const flightInput = document.getElementById('fFlightNo');
+    if (flightInput) {
+      const nativeSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+      nativeSetter.call(flightInput, 'CA1234');
+      flightInput.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+  }, 300);
+}
+
+function onboardFinish() {
+  localStorage.setItem('tl_onboarded', '1');
+  closeModal('onboarding');
+  showToast('引导完成！开始记录你的旅程 🎉');
 }
 
 function onboardSample() {
   localStorage.setItem('tl_onboarded', '1');
   closeModal('onboarding');
-  // Trigger the existing sample data button
   document.getElementById('btnAddSample').click();
 }
 
-function onboardAdd() {
-  localStorage.setItem('tl_onboarded', '1');
-  closeModal('onboarding');
-  Trips.openAdd();
-}
+// Rich sample data with travel groups
+function _loadRichSampleData() {
+  // Create travel groups
+  const group1 = Store.addGroup('东南亚之旅');
+  const group2 = Store.addGroup('日本自由行');
+  const group3 = Store.addGroup('出差');
 
-function onboardSkip() {
-  localStorage.setItem('tl_onboarded', '1');
-  closeModal('onboarding');
+  const sampleTrips = [
+    // 出差组
+    { type: 'flight', date: '2026-01-15', fromCode: 'PEK', toCode: 'SHA', flightNo: 'CA1515', airline: 'CA', depTime: '08:00', arrTime: '10:15', seatClass: 'economy', seat: '32A', note: '年初出差', groupId: group3.id },
+    { type: 'train', date: '2026-01-16', fromStation: '上海虹桥', toStation: '杭州东', trainNo: 'G7501', depTime: '09:00', arrTime: '10:05', seatType: '二等座', groupId: group3.id },
+    { type: 'flight', date: '2026-02-20', fromCode: 'SHA', toCode: 'CTU', flightNo: 'MU5401', airline: 'MU', depTime: '14:30', arrTime: '17:45', seatClass: 'economy', groupId: group3.id },
+    { type: 'train', date: '2026-03-05', fromStation: '广州南', toStation: '深圳北', trainNo: 'G6001', depTime: '08:00', arrTime: '08:35', seatType: '一等座', groupId: group3.id },
+    // 东南亚之旅组
+    { type: 'flight', date: '2026-04-01', fromCode: 'CAN', toCode: 'SIN', flightNo: 'CZ351', airline: 'CZ', depTime: '15:00', arrTime: '19:05', seatClass: 'business', seat: '1A', note: '期待已久的东南亚游', groupId: group1.id },
+    { type: 'flight', date: '2026-04-05', fromCode: 'SIN', toCode: 'BKK', flightNo: 'SQ972', airline: 'SQ', depTime: '10:30', arrTime: '12:00', seatClass: 'economy', groupId: group1.id },
+    { type: 'flight', date: '2026-04-08', fromCode: 'BKK', toCode: 'HKG', flightNo: 'CX750', airline: 'CX', depTime: '16:45', arrTime: '20:30', seatClass: 'economy', groupId: group1.id },
+    { type: 'flight', date: '2026-04-09', fromCode: 'HKG', toCode: 'CAN', flightNo: 'CZ306', airline: 'CZ', depTime: '10:00', arrTime: '11:00', seatClass: 'economy', groupId: group1.id },
+    // 日本自由行组
+    { type: 'flight', date: '2026-06-15', fromCode: 'SZX', toCode: 'NRT', flightNo: 'NH932', airline: 'NH', depTime: '09:30', arrTime: '14:45', seatClass: 'economy', seat: '24C', note: '日本之旅开始！', groupId: group2.id },
+    { type: 'train', date: '2026-06-17', fromStation: '东京', toStation: '大阪', trainNo: 'のぞみ231', depTime: '10:00', arrTime: '12:30', seatType: '指定席', groupId: group2.id },
+    { type: 'flight', date: '2026-06-20', fromCode: 'KIX', toCode: 'PVG', flightNo: 'MU748', airline: 'MU', depTime: '15:00', arrTime: '16:30', seatClass: 'economy', groupId: group2.id },
+    // 无组别
+    { type: 'flight', date: '2026-03-12', fromCode: 'CTU', toCode: 'CAN', flightNo: '3U8881', airline: '3U', depTime: '11:20', arrTime: '13:40', seatClass: 'economy', note: '回广州' },
+  ];
+
+  let added = 0;
+  sampleTrips.forEach(t => {
+    const trip = { ...t };
+    if (t.type === 'flight' && t.fromCode && AIRPORTS[t.fromCode]) {
+      const ap = AIRPORTS[t.fromCode]; trip.fromLat = ap.lat; trip.fromLng = ap.lng; trip.fromCity = ap.city;
+    }
+    if (t.type === 'flight' && t.toCode && AIRPORTS[t.toCode]) {
+      const ap = AIRPORTS[t.toCode]; trip.toLat = ap.lat; trip.toLng = ap.lng; trip.toCity = ap.city;
+    }
+    if (t.type === 'train' && t.fromStation && STATIONS[t.fromStation]) {
+      const st = STATIONS[t.fromStation]; trip.fromLat = st.lat; trip.fromLng = st.lng; trip.fromCity = st.city;
+    }
+    if (t.type === 'train' && t.toStation && STATIONS[t.toStation]) {
+      const st = STATIONS[t.toStation]; trip.toLat = st.lat; trip.toLng = st.lng; trip.toCity = st.city;
+    }
+    if (trip.fromLat && trip.toLat) {
+      trip.distance = calcDistance(trip.fromLat, trip.fromLng, trip.toLat, trip.toLng);
+      if (trip.type === 'train') trip.distance = Math.round(trip.distance * 1.3);
+    }
+    trip.duration = calcTripDuration(trip.depTime, trip.arrTime, trip.fromCode, trip.toCode);
+    Store.add(trip);
+    added++;
+  });
+
+  showToast(`已添加 ${added} 条示例行程（含3个旅行组）🎉`);
+  Trips.render();
+  TravelMap.draw();
+  TravelMap.updateSummary();
+  Stats.render();
+  Annual.render();
 }

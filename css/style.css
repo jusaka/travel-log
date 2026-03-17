@@ -296,6 +296,10 @@ textarea{resize:none;font-family:inherit}
 .pwa-banner-close{background:none;border:none;color:var(--text3);font-size:22px;cursor:pointer;padding:8px;min-width:44px;min-height:44px;display:flex;align-items:center;justify-content:center;border-radius:50%}
 .pwa-banner-close:active{background:var(--bg3)}
 
+/* Onboarding dots */
+.onboard-dot{width:8px;height:8px;border-radius:50%;background:var(--bg3);transition:all .3s}
+.onboard-dot.active{width:24px;border-radius:4px;background:var(--accent)}
+
 /* Form validation error highlight */
 .form-error {
   outline: 2px solid #ef4444 !important;
