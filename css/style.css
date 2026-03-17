@@ -20,7 +20,7 @@ html{touch-action:manipulation}
   --flight:#d97706;--flight-bg:rgba(217,119,6,0.12);
   --train:#059669;--train-bg:rgba(5,150,105,0.12);
 }
-html,body{height:100vh;width:100vw;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);line-height:1.5;-webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%;transition:background .3s,color .3s}
+html,body{height:100vh;width:100vw;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',Roboto,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;background:var(--bg);color:var(--text);line-height:1.5;-webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%;transition:background .3s,color .3s}
 
 /* ===== Loading ===== */
 .loading-screen{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--bg);z-index:9999}
@@ -75,7 +75,7 @@ header{position:fixed;top:0;left:0;right:0;height:var(--header-h);display:flex;a
 .legend-dot.flight{background:var(--flight)}
 .legend-dot.train{background:var(--train)}
 #mapSummary{position:absolute;left:0;right:0;bottom:8px;text-align:center;font-size:12px;color:var(--text2);background:rgba(10,15,26,0.7);margin:0 12px;padding:6px 0;border-radius:8px;backdrop-filter:blur(4px)}
-.light #mapSummary{background:rgba(255,255,255,0.85)}
+.light #mapSummary{background:rgba(255,255,255,0.92);border:1px solid rgba(0,0,0,0.08);box-shadow:0 2px 8px rgba(0,0,0,0.06)}
 #mapSummary .sep{margin:0 6px;opacity:0.4}
 
 /* ===== Map Tooltip ===== */
@@ -228,9 +228,9 @@ textarea{resize:none;font-family:inherit}
 
 /* ===== Empty State ===== */
 .empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;text-align:center}
-.empty-icon{font-size:48px;margin-bottom:16px}
-.empty-text{font-size:16px;font-weight:600;margin-bottom:8px}
-.empty-sub{font-size:13px;color:var(--text3)}
+.empty-icon{font-size:64px;margin-bottom:20px}
+.empty-text{font-size:18px;font-weight:600;margin-bottom:10px}
+.empty-sub{font-size:14px;color:var(--text2);line-height:1.6}
 
 /* ===== Trip Detail ===== */
 .detail-boarding{text-align:center;padding:20px 0;border-bottom:1px dashed var(--bg3);margin-bottom:16px;position:relative}
