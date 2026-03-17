@@ -42,6 +42,26 @@
 
 <!-- Main App -->
 <div id="app" style="display:none">
+
+<!-- Onboarding Modal -->
+<div id="onboarding" class="modal" style="display:none">
+  <div class="modal-content" style="max-width:380px;border-radius:20px;padding:32px 24px;text-align:center">
+    <div id="onboardStep1" class="onboard-step">
+      <div style="font-size:64px;margin-bottom:16px">✈️</div>
+      <h2 style="font-size:22px;margin:0 0 8px;color:var(--text)">欢迎来到旅途纵横</h2>
+      <p style="font-size:14px;color:var(--text3);line-height:1.6;margin:0 0 24px">记录每一段飞行和高铁旅程<br>数据只存在你的浏览器里，完全隐私</p>
+      <button class="btn btn-primary" style="width:100%;padding:14px;font-size:15px" onclick="onboardNext(2)">开始体验</button>
+      <button class="btn" style="width:100%;padding:12px;font-size:13px;margin-top:8px;color:var(--text3)" onclick="onboardSample()">先看看示例数据</button>
+    </div>
+    <div id="onboardStep2" class="onboard-step" style="display:none">
+      <div style="font-size:48px;margin-bottom:16px">🎫</div>
+      <h2 style="font-size:20px;margin:0 0 8px;color:var(--text)">添加你的第一段旅程</h2>
+      <p style="font-size:14px;color:var(--text3);line-height:1.6;margin:0 0 24px">支持飞行和高铁，输入航班号自动识别航司<br>也可以粘贴行程文本，AI帮你填写</p>
+      <button class="btn btn-primary" style="width:100%;padding:14px;font-size:15px" onclick="onboardAdd()">📝 添加行程</button>
+      <button class="btn" style="width:100%;padding:12px;font-size:13px;margin-top:8px;color:var(--text3)" onclick="onboardSkip()">稍后再说</button>
+    </div>
+  </div>
+</div>
   <!-- Header -->
   <header id="header">
     <div class="header-left">
@@ -86,6 +106,7 @@
       <button id="btnZoomOut" class="map-btn">−</button>
       <button id="btnResetView" class="map-btn">🏠</button>
       <button id="btnPlayback" class="map-btn" title="轨迹回放">▶️</button>
+      <button id="btnShareMap" class="map-btn" title="分享足迹" onclick="TravelMap.shareMap()">📤</button>
     </div>
     <div id="mapLegend">
       <div class="legend-item"><span class="legend-dot flight"></span>飞行</div>

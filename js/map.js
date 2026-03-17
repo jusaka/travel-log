@@ -953,4 +953,67 @@ const TravelMap = {
     document.getElementById('mapTrainCount').textContent = trains.length + ' 次高铁';
     document.getElementById('mapCityCount').textContent = cities.size + ' 个城市';
   },
+
+  shareMap() {
+    const canvas = this.canvas;
+    const trips = Store.getAll();
+    if (trips.length === 0) { showToast('还没有行程数据哦'); return; }
+    
+    const flights = trips.filter(t => t.type === 'flight');
+    const trains = trips.filter(t => t.type === 'train');
+    const cities = new Set();
+    trips.forEach(t => { if (t.fromCity) cities.add(t.fromCity); if (t.toCity) cities.add(t.toCity); });
+    const totalKm = trips.reduce((s, t) => s + (t.distance || 0), 0);
+    
+    // Create share canvas
+    const dpr = window.devicePixelRatio || 2;
+    const W = 390, H = 520;
+    const sc = document.createElement('canvas');
+    sc.width = W * dpr;
+    sc.height = H * dpr;
+    const ctx = sc.getContext('2d');
+    ctx.scale(dpr, dpr);
+    
+    // Background
+    ctx.fillStyle = '#0a0f1a';
+    ctx.fillRect(0, 0, W, H);
+    
+    // Draw map from existing canvas
+    const mapH = 320;
+    ctx.drawImage(canvas, 0, 0, canvas.width, canvas.height, 10, 10, W - 20, mapH);
+    
+    // Stats bar
+    const sy = mapH + 20;
+    ctx.fillStyle = '#1e293b';
+    ctx.beginPath();
+    ctx.roundRect(16, sy, W - 32, 70, 12);
+    ctx.fill();
+    
+    ctx.fillStyle = '#f59e0b';
+    ctx.font = 'bold 22px -apple-system, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(fmtDist(totalKm), W / 2, sy + 28);
+    
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = '12px -apple-system, sans-serif';
+    ctx.fillText(flights.length + ' 次飞行 · ' + trains.length + ' 次高铁 · ' + cities.size + ' 个城市', W / 2, sy + 50);
+    
+    // Footer
+    ctx.fillStyle = '#f59e0b';
+    ctx.font = 'bold 13px -apple-system, sans-serif';
+    ctx.fillText('旅途纵横', W / 2, sy + 90);
+    ctx.fillStyle = '#4b5563';
+    ctx.font = '10px -apple-system, sans-serif';
+    ctx.fillText('jusaka.github.io/travel-log', W / 2, sy + 106);
+    
+    sc.toBlob(blob => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = '旅途纵横-足迹地图.png';
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast('足迹地图已保存 📸');
+    }, 'image/png');
+  },
 };

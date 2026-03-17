@@ -392,6 +392,10 @@
     setTimeout(() => {
       document.getElementById('loading').remove();
       TravelMap.resize();
+      // Show onboarding for first-time users
+      if (!localStorage.getItem('tl_onboarded') && !localStorage.getItem(STORE_KEY)) {
+        document.getElementById('onboarding').style.display = 'flex';
+      }
     }, 300);
   }, loadDelay);
 
@@ -487,3 +491,27 @@
   // Render initial trip list
   Trips.render();
 })();
+
+// Onboarding functions
+function onboardNext(step) {
+  document.querySelectorAll('.onboard-step').forEach(s => s.style.display = 'none');
+  document.getElementById('onboardStep' + step).style.display = '';
+}
+
+function onboardSample() {
+  localStorage.setItem('tl_onboarded', '1');
+  closeModal('onboarding');
+  // Trigger the existing sample data button
+  document.getElementById('btnAddSample').click();
+}
+
+function onboardAdd() {
+  localStorage.setItem('tl_onboarded', '1');
+  closeModal('onboarding');
+  Trips.openAdd();
+}
+
+function onboardSkip() {
+  localStorage.setItem('tl_onboarded', '1');
+  closeModal('onboarding');
+}
