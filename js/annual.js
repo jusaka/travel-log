@@ -609,24 +609,13 @@ const Annual = {
     drawDivider(curY);
     curY += 24;
     
-    // Brand footer with URL
-    ctx.fillStyle = '#1e293b';
-    ctx.beginPath();
-    ctx.roundRect(28, curY - 8, W - 56, 60, 12);
-    ctx.fill();
+    // Brand footer with QR code
+    const footerH = drawShareFooter(ctx, W, curY, 70);
+    curY += footerH;
     
-    ctx.fillStyle = '#f59e0b';
-    ctx.font = 'bold 14px -apple-system, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('✈️ 旅途纵横 · 记录每一次出发', W / 2, curY + 14);
-    
-    ctx.fillStyle = '#64748b';
-    ctx.font = '11px -apple-system, sans-serif';
-    ctx.fillText('jusaka.github.io/travel-log', W / 2, curY + 34);
-    
-    curY += 60;
     ctx.fillStyle = '#374151';
     ctx.font = '9px -apple-system, sans-serif';
+    ctx.textAlign = 'center';
     ctx.fillText(`生成于 ${new Date().toISOString().split('T')[0]}`, W / 2, curY + 4);
 
     // ===== CROP to actual content height =====
@@ -734,13 +723,15 @@ const Annual = {
     ctx.lineTo(W - 100, 318);
     ctx.stroke();
 
-    // Footer
-    ctx.fillStyle = '#6b7280';
-    ctx.font = '13px -apple-system, sans-serif';
-    ctx.fillText(`✈️ 旅途纵横 · ${this.year}年度成就`, W / 2, 348);
+    // Footer with QR
+    drawShareQR(ctx, W - 80, 310, 70);
+    ctx.fillStyle = '#f59e0b';
+    ctx.font = 'bold 13px -apple-system, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText('旅途纵横', 30, 340);
     ctx.fillStyle = '#4b5563';
     ctx.font = '11px -apple-system, sans-serif';
-    ctx.fillText('jusaka.github.io/travel-log', W / 2, 372);
+    ctx.fillText(SHARE_URL, 30, 360);
 
     canvas.toBlob(blob => {
       showSharePreview(blob, `旅途纵横-成就-${a.name}.png`, `我解锁了「${a.name}」成就！`, `${a.icon} ${a.name} - ${a.desc}`);

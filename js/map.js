@@ -1039,13 +1039,8 @@ const TravelMap = {
       const pct = Math.min(totalKm / earthCircum, 1);
       ctx.beginPath(); ctx.roundRect(barX, barY, barW * pct, 10, 5); ctx.fill();
 
-      // Footer
-      ctx.fillStyle = '#f59e0b';
-      ctx.font = 'bold 16px -apple-system, sans-serif';
-      ctx.fillText('旅途纵横 · TravelLog', W / 2, H - 60);
-      ctx.fillStyle = '#4b5563';
-      ctx.font = '13px -apple-system, sans-serif';
-      ctx.fillText('jusaka.github.io/travel-log', W / 2, H - 38);
+      // Footer with QR code
+      drawShareFooter(ctx, W, H - 120, 80);
 
       // Show preview
       sc.toBlob(blob => {

@@ -580,21 +580,12 @@ const Stats = {
       ctx.fillText(`🚄 ${Math.round((1 - flightPct) * 100)}%`, barX + barTotalW, curY);
     }
 
-    // Footer
+    // Footer with QR
     curY += 24;
     drawDivider(curY);
-    curY += 20;
-    ctx.fillStyle = '#1e293b';
-    ctx.beginPath();
-    ctx.roundRect(28, curY - 4, W - 56, 48, 10);
-    ctx.fill();
-    ctx.fillStyle = '#f59e0b';
-    ctx.font = 'bold 13px -apple-system, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('✈️ 旅途纵横 · 记录每一次出发', W / 2, curY + 14);
-    ctx.fillStyle = '#64748b';
-    ctx.font = '10px -apple-system, sans-serif';
-    ctx.fillText('jusaka.github.io/travel-log', W / 2, curY + 32);
+    curY += 10;
+    const footerH = drawShareFooter(ctx, W, curY, 60);
+    curY += footerH;
 
     // Crop canvas to actual content height
     const finalH = Math.min(curY + 60, H);

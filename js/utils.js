@@ -1,5 +1,57 @@
 // ===== Utility functions =====
 
+// ===== Share Config (change these when domain changes) =====
+const SHARE_URL = 'jusaka.github.io/travel-log';
+const SHARE_FULL_URL = 'https://' + SHARE_URL + '/';
+const SHARE_QR_PATH = 'icons/qr-share.png';
+
+// Preload QR code image
+const _shareQRImg = new Image();
+_shareQRImg.src = SHARE_QR_PATH;
+
+// Draw QR code on share canvas (call this in any share image generation)
+function drawShareQR(ctx, x, y, size) {
+  if (_shareQRImg.complete && _shareQRImg.naturalWidth > 0) {
+    ctx.drawImage(_shareQRImg, x, y, size, size);
+  } else {
+    // Fallback: draw a placeholder box
+    ctx.strokeStyle = '#334155';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(x, y, size, size);
+    ctx.fillStyle = '#64748b';
+    ctx.font = '10px -apple-system, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('扫码体验', x + size/2, y + size/2 + 4);
+  }
+}
+
+// Draw standard share footer (brand + QR + URL)
+function drawShareFooter(ctx, W, curY, qrSize) {
+  qrSize = qrSize || 80;
+  const footerH = qrSize + 40;
+  
+  // QR on right
+  const qrX = W - qrSize - 30;
+  const qrY = curY + 10;
+  drawShareQR(ctx, qrX, qrY, qrSize);
+  
+  // Brand text on left
+  ctx.fillStyle = '#f59e0b';
+  ctx.font = 'bold 16px -apple-system, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText('旅途纵横', 30, curY + 30);
+  
+  ctx.fillStyle = '#64748b';
+  ctx.font = '12px -apple-system, sans-serif';
+  ctx.fillText(SHARE_URL, 30, curY + 50);
+  
+  ctx.fillStyle = '#475569';
+  ctx.font = '10px -apple-system, sans-serif';
+  ctx.fillText('扫码或访问链接 →', 30, curY + 70);
+  
+  return footerH;
+}
+
 // Polyfill: CanvasRenderingContext2D.roundRect (Safari < 16, Chrome < 99)
 if (typeof CanvasRenderingContext2D !== 'undefined' && !CanvasRenderingContext2D.prototype.roundRect) {
   CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, radii) {
