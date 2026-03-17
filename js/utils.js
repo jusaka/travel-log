@@ -9,47 +9,64 @@ const SHARE_QR_PATH = 'icons/qr-share.png';
 const _shareQRImg = new Image();
 _shareQRImg.src = SHARE_QR_PATH;
 
-// Draw QR code on share canvas (call this in any share image generation)
+// Draw QR code on share canvas with rounded container
 function drawShareQR(ctx, x, y, size) {
+  // Draw rounded container background
+  ctx.fillStyle = 'rgba(255,255,255,0.06)';
+  ctx.beginPath();
+  ctx.roundRect(x - 6, y - 6, size + 12, size + 30, 10);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.roundRect(x - 6, y - 6, size + 12, size + 30, 10);
+  ctx.stroke();
+
+  // Draw QR image
   if (_shareQRImg.complete && _shareQRImg.naturalWidth > 0) {
     ctx.drawImage(_shareQRImg, x, y, size, size);
   } else {
-    // Fallback: draw a placeholder box
-    ctx.strokeStyle = '#334155';
+    // Fallback: placeholder
+    ctx.strokeStyle = 'rgba(255,255,255,0.2)';
     ctx.lineWidth = 1;
     ctx.strokeRect(x, y, size, size);
     ctx.fillStyle = '#64748b';
-    ctx.font = '10px -apple-system, sans-serif';
+    ctx.font = '11px -apple-system, sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('扫码体验', x + size/2, y + size/2 + 4);
+    ctx.fillText('QR', x + size/2, y + size/2 + 4);
   }
+
+  // "扫码体验" label below QR
+  ctx.fillStyle = '#64748b';
+  ctx.font = '9px -apple-system, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('扫码体验', x + size/2, y + size + 16);
 }
 
 // Draw standard share footer (brand + QR + URL)
 function drawShareFooter(ctx, W, curY, qrSize) {
-  qrSize = qrSize || 80;
-  const footerH = qrSize + 40;
+  qrSize = qrSize || 70;
   
-  // QR on right
-  const qrX = W - qrSize - 30;
-  const qrY = curY + 10;
+  // QR on right with container
+  const qrX = W - qrSize - 36;
+  const qrY = curY + 6;
   drawShareQR(ctx, qrX, qrY, qrSize);
   
   // Brand text on left
   ctx.fillStyle = '#f59e0b';
   ctx.font = 'bold 16px -apple-system, sans-serif';
   ctx.textAlign = 'left';
-  ctx.fillText('旅途纵横', 30, curY + 30);
-  
-  ctx.fillStyle = '#64748b';
-  ctx.font = '12px -apple-system, sans-serif';
-  ctx.fillText(SHARE_URL, 30, curY + 50);
+  ctx.fillText('旅途纵横', 30, curY + 28);
   
   ctx.fillStyle = '#475569';
-  ctx.font = '10px -apple-system, sans-serif';
-  ctx.fillText('扫码或访问链接 →', 30, curY + 70);
+  ctx.font = '13px -apple-system, sans-serif';
+  ctx.fillText('TravelLog', 30, curY + 48);
+
+  ctx.fillStyle = '#374151';
+  ctx.font = '11px -apple-system, sans-serif';
+  ctx.fillText(SHARE_URL, 30, curY + 68);
   
-  return footerH;
+  return qrSize + 40;
 }
 
 // Polyfill: CanvasRenderingContext2D.roundRect (Safari < 16, Chrome < 99)
