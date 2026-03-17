@@ -118,7 +118,7 @@ const Stats = {
         <h4>🏙️ 最常到访城市</h4>
         <div class="bar-chart">
           ${stats.topCities.map(([city, count]) => `
-            <div class="bar-item">
+            <div class="bar-item" style="cursor:pointer" onclick="document.querySelector('.tab[data-tab=&quot;trips&quot;]').click();setTimeout(()=>{document.getElementById('tripSearch').value='${escHtml(city)}';document.getElementById('tripSearch').dispatchEvent(new Event('input'))},200)">
               <span class="bar-label">${escHtml(city)}</span>
               <div class="bar-track">
                 <div class="bar-fill flight" style="width:${(count / maxCount * 100).toFixed(0)}%"></div>
@@ -137,7 +137,7 @@ const Stats = {
         <h4>🛫 常飞航司</h4>
         <div class="bar-chart">
           ${stats.topAirlines.map(([code, count]) => `
-            <div class="bar-item">
+            <div class="bar-item" style="cursor:pointer" onclick="document.querySelector('.tab[data-tab=&quot;trips&quot;]').click();setTimeout(()=>{document.getElementById('tripSearch').value='${escHtml(AIRLINES[code]?.name || code)}';document.getElementById('tripSearch').dispatchEvent(new Event('input'))},200)">
               <span class="bar-label">${AIRLINES[code]?.name || code}</span>
               <div class="bar-track">
                 <div class="bar-fill train" style="width:${(count / maxCount * 100).toFixed(0)}%"></div>

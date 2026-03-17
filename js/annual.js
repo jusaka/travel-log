@@ -187,7 +187,7 @@ const Annual = {
         ${monthlyCounts.map((c, i) => {
           const h = c > 0 ? Math.max(12, (c / maxMonthCount) * 85) : 4;
           const color = c > 0 ? 'var(--accent)' : 'var(--bg3)';
-          return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:${c > 0 ? 'pointer' : 'default'}" ${c > 0 ? `onclick="document.querySelector('[data-tab=\\'trips\\']').click();document.getElementById('tripSearch').value='';document.getElementById('filterYear').value='${this.year}';document.getElementById('filterType').value='all';Trips.render();setTimeout(()=>{const h=document.querySelectorAll('.trip-month-header');for(const el of h){if(el.dataset.month==='${i}'){el.scrollIntoView({behavior:'smooth',block:'start'});break;}}},100)"` : ''}>
+          return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px">
             ${c > 0 ? `<div style="font-size:10px;color:var(--text2);font-weight:600">${c}</div>` : '<div style="font-size:10px;color:transparent">0</div>'}
             <div style="width:100%;height:${h}px;background:${color};border-radius:3px 3px 0 0;transition:height .5s"></div>
             <div style="font-size:9px;color:var(--text3)">${monthNames[i]}</div>

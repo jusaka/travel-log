@@ -583,7 +583,7 @@
     if (localStorage.getItem('tl_pwa_dismissed')) return;
     if (!_deferredPrompt) return;
     const banner = document.getElementById('pwaBanner');
-    if (banner) banner.style.display = '';
+    if (banner) { banner.style.display = ''; document.body.classList.add('pwa-banner-visible'); }
   }
 
   setTimeout(_maybeShowPWABanner, 3 * 60 * 1000);
@@ -598,11 +598,13 @@
     }
     _deferredPrompt = null;
     document.getElementById('pwaBanner').style.display = 'none';
+    document.body.classList.remove('pwa-banner-visible');
   };
 
   // Close button
   document.getElementById('pwaBannerClose').onclick = () => {
     document.getElementById('pwaBanner').style.display = 'none';
+    document.body.classList.remove('pwa-banner-visible');
     localStorage.setItem('tl_pwa_dismissed', '1');
   };
 

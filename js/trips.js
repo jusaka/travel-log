@@ -714,8 +714,8 @@ const Trips = {
       const no = isF ? (t.flightNo || '') : (t.trainNo || '');
       const dur = t.duration ? fmtDuration(t.duration) : '';
       const dist = t.distance ? fmtDist(t.distance) : '—';
-      const fromLabel = isF ? (t.fromCode || t.fromCity || '?') : (t.fromStation || t.fromCity || '?');
-      const toLabel = isF ? (t.toCode || t.toCity || '?') : (t.toStation || t.toCity || '?');
+      const fromLabel = isF ? (t.fromCode || t.fromCity || '?') : (t.fromStation && t.fromStation !== t.fromCity ? t.fromStation : '');
+      const toLabel = isF ? (t.toCode || t.toCity || '?') : (t.toStation && t.toStation !== t.toCity ? t.toStation : '');
       const airline = isF && t.airline ? (AIRLINES[t.airline]?.name || t.airline) : '';
       const group = t.groupId ? Store.getGroupById(t.groupId) : null;
       const groupBadge = group ? `<span style="font-size:10px;background:rgba(59,130,246,0.15);color:var(--accent);padding:1px 6px;border-radius:8px;margin-left:6px">🏷️ ${escHtml(group.name)}</span>` : '';
