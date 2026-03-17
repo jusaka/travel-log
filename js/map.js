@@ -574,7 +574,7 @@ const TravelMap = {
         const lx = pos.ax === 'center' ? pos.x - tw/2 : pos.ax === 'left' ? pos.x : pos.x - tw;
         const ly = pos.y - th;
         // Add padding around label rect for minimum spacing
-        const pad = 3;
+        const pad = 6;
         const rect = { x: lx - pad, y: ly - pad, w: tw + pad * 2, h: th + pad * 2 };
         // Check overlap with existing labels
         const overlaps = labelRects.some(r => !(rect.x + rect.w < r.x || rect.x > r.x + r.w || rect.y + rect.h < r.y || rect.y > r.y + r.h));
