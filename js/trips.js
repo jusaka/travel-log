@@ -883,8 +883,6 @@ const Trips = {
         Annual.render();
       });
     };
-      Annual.render();
-    };
 
     // Edit button — openModal inside openEdit auto-closes tripDetailModal (mutual exclusion)
     document.getElementById('btnEditFromDetail').onclick = () => {
