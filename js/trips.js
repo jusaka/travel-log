@@ -484,14 +484,18 @@ const Trips = {
   deleteTrip() {
     if (!this.editingId) return;
     const trip = Store.getById(this.editingId);
-    Store.delete(this.editingId);
-    closeModal('addTripModal');
-    this.render();
-    TravelMap._needsRedraw = true;
-    TravelMap.updateSummary();
-    Stats.render();
-    Annual.render();
-    showUndoToast('已删除行程', trip);
+    const from = trip.fromCity || trip.fromStation || trip.fromCode || '?';
+    const to = trip.toCity || trip.toStation || trip.toCode || '?';
+    showConfirm(`确定删除 ${from} → ${to} 这条行程吗？`, () => {
+      Store.delete(this.editingId);
+      closeModal('addTripModal');
+      this.render();
+      TravelMap._needsRedraw = true;
+      TravelMap.updateSummary();
+      Stats.render();
+      Annual.render();
+      showUndoToast('已删除行程', trip);
+    });
   },
 
   duplicateTrip() {
@@ -561,13 +565,17 @@ const Trips = {
         }
       } else if (action === 'delete') {
         const trip = Store.getById(id);
-        Store.delete(id);
-        showUndoToast('已删除行程', trip);
-        this.render();
-        TravelMap._needsRedraw = true;
-        TravelMap.updateSummary();
-        Stats.render();
-        Annual.render();
+        const from = trip.fromCity || trip.fromStation || trip.fromCode || '?';
+        const to = trip.toCity || trip.toStation || trip.toCode || '?';
+        showConfirm(`确定删除 ${from} → ${to} 这条行程吗？`, () => {
+          Store.delete(id);
+          showUndoToast('已删除行程', trip);
+          this.render();
+          TravelMap._needsRedraw = true;
+          TravelMap.updateSummary();
+          Stats.render();
+          Annual.render();
+        });
       }
     };
     // Remove previous listener, add new one
@@ -862,13 +870,19 @@ const Trips = {
     // Delete button in detail modal
     document.getElementById('btnDeleteFromDetail').onclick = () => {
       const tripData = Store.getById(id);
-      Store.delete(id);
-      closeModal('tripDetailModal');
-      showUndoToast('已删除行程', tripData);
-      this.render();
-      TravelMap._needsRedraw = true;
-      TravelMap.updateSummary();
-      Stats.render();
+      const from = tripData.fromCity || tripData.fromStation || tripData.fromCode || '?';
+      const to = tripData.toCity || tripData.toStation || tripData.toCode || '?';
+      showConfirm(`确定删除 ${from} → ${to} 这条行程吗？`, () => {
+        Store.delete(id);
+        closeModal('tripDetailModal');
+        showUndoToast('已删除行程', tripData);
+        this.render();
+        TravelMap._needsRedraw = true;
+        TravelMap.updateSummary();
+        Stats.render();
+        Annual.render();
+      });
+    };
       Annual.render();
     };
 

@@ -236,8 +236,8 @@ textarea{resize:none;font-family:inherit}
 .detail-boarding{text-align:center;padding:20px 0;border-bottom:1px dashed var(--bg3);margin-bottom:16px;position:relative}
 
 /* ===== Toast ===== */
-.toast{position:fixed;top:calc(var(--header-h)+16px);left:50%;transform:translateX(-50%);background:var(--bg3);color:var(--text);padding:10px 20px;border-radius:20px;font-size:13px;z-index:9999;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap;backdrop-filter:blur(4px);box-shadow:0 4px 12px rgba(0,0,0,0.2)}
-.toast.show{opacity:1}
+.toast{position:fixed;top:calc(var(--header-h)+16px);left:50%;transform:translateX(-50%);background:var(--bg3);color:var(--text);padding:10px 20px;border-radius:20px;font-size:13px;z-index:9999;opacity:0;transition:opacity .3s;pointer-events:none;backdrop-filter:blur(4px);box-shadow:0 4px 12px rgba(0,0,0,0.2)}
+.toast.show{opacity:1;pointer-events:auto}
 
 /* ===== Scrollbar ===== */
 ::-webkit-scrollbar{width:4px}

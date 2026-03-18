@@ -625,6 +625,17 @@ const TravelMap = {
     ctx.fillText(label, x + barPx / 2, y - 6);
   },
 
+  _jumpToCity(city) {
+    if (!city) return;
+    document.getElementById('mapTooltip').style.display = 'none';
+    document.querySelector('[data-tab=trips]').click();
+    setTimeout(() => {
+      const searchInput = document.getElementById('tripSearch');
+      searchInput.value = city;
+      searchInput.dispatchEvent(new Event('input'));
+    }, 200);
+  },
+
   _checkHover(mx, my, isTap) {
     const trips = Store.getAll();
     if (!trips.length) return;
@@ -668,21 +679,9 @@ const TravelMap = {
           ${ep.flightCount > 0 ? `<div class="tt-row"><span>✈️ 飞行</span><span>${ep.flightCount} 次</span></div>` : ''}
           ${ep.trainCount > 0 ? `<div class="tt-row"><span>🚄 高铁</span><span>${ep.trainCount} 次</span></div>` : ''}
           <div class="tt-row"><span>合计</span><span>${totalTrips} 次</span></div>
-          <div style="margin-top:8px;text-align:center;font-size:11px;color:var(--accent);cursor:pointer" class="tt-view-trips" data-city="${escHtml(ep.city || '')}">查看该城市行程 →</div>`;
+          <button onclick="TravelMap._jumpToCity('${escAttr(ep.city || '')}')" style="margin-top:10px;width:100%;padding:8px;border-radius:8px;background:var(--accent);color:#fff;border:none;font-size:12px;cursor:pointer;font-weight:600">查看该城市行程 →</button>`;
         
-        // Add click handler for "view trips" link
-        const viewBtn = tooltip.querySelector('.tt-view-trips');
-        if (viewBtn) {
-          viewBtn.onclick = () => {
-            const city = viewBtn.dataset.city;
-            tooltip.style.display = 'none';
-            // Switch to trips tab and search for city
-            document.querySelector('[data-tab=trips]').click();
-            const searchInput = document.getElementById('tripSearch');
-            searchInput.value = city;
-            searchInput.dispatchEvent(new Event('input'));
-          };
-        }
+        // Click handler is now inline button onclick
       }
     });
     if (!found) {
