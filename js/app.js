@@ -781,7 +781,7 @@ function _loadRichSampleData() {
     { type: 'flight', date: '2026-04-09', fromCode: 'HKG', toCode: 'CAN', flightNo: 'CZ306', airline: 'CZ', depTime: '10:00', arrTime: '11:00', seatClass: 'economy', groupId: group1.id },
     // 日本自由行组
     { type: 'flight', date: '2026-06-15', fromCode: 'SZX', toCode: 'NRT', flightNo: 'NH932', airline: 'NH', depTime: '09:30', arrTime: '14:45', seatClass: 'economy', seat: '24C', note: '日本之旅开始！', groupId: group2.id },
-    { type: 'train', date: '2026-06-17', fromStation: '东京', toStation: '大阪', trainNo: 'のぞみ231', depTime: '10:00', arrTime: '12:30', seatType: '指定席', groupId: group2.id },
+    { type: 'train', date: '2026-06-17', fromStation: '东京', toStation: '大阪', trainNo: 'のぞみ231', depTime: '10:00', arrTime: '12:30', seatType: '指定席', groupId: group2.id, fromCity: '东京', fromLat: 35.6812, fromLng: 139.7671, toCity: '大阪', toLat: 34.6937, toLng: 135.5023, distance: 515 },
     { type: 'flight', date: '2026-06-20', fromCode: 'KIX', toCode: 'PVG', flightNo: 'MU748', airline: 'MU', depTime: '15:00', arrTime: '16:30', seatClass: 'economy', groupId: group2.id },
     // 无组别
     { type: 'flight', date: '2026-03-12', fromCode: 'CTU', toCode: 'CAN', flightNo: '3U8881', airline: '3U', depTime: '11:20', arrTime: '13:40', seatClass: 'economy', note: '回广州' },
